@@ -29,6 +29,7 @@ def process_all_stations(data_dir):
     
     # Extract WMO ID and parse each file
     for filename in files:
+        print(f"Processing {filename}...")
         match = re.search(r'IDM000(\d{5})', filename)
         wmo_id = match.group(1) if match else "Unknown"
         
@@ -59,6 +60,8 @@ def process_all_stations(data_dir):
                     if data:
                         data.update(current_meta)
                         station_flights.append(data)
+
+            print(f"  Parsed {len(station_flights)} flights for station {wmo_id}")
         
         if not station_flights: continue
 
@@ -73,6 +76,7 @@ def process_all_stations(data_dir):
         all_data_frames.append(temp_df)
 
     master_df = pd.concat(all_data_frames, ignore_index=True)
+    print(f"Total records processed: {len(master_df)}")
     return master_df
 
 # Run and Save
