@@ -1,2 +1,6 @@
 data/
 igra_v2_data.csv
+.python-version
+pyproject.toml
+.venv/
+uv.lock
