@@ -4,3 +4,6 @@ igra_v2_data.csv
 pyproject.toml
 .venv/
 uv.lock
+wyoming/
+research/
+rason_data.db
