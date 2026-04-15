@@ -594,7 +594,7 @@
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- 
 <header>
   <div class="header-inner">
     <div class="logo">
@@ -606,24 +606,13 @@
     </div>
     <span class="header-badge">● Live Demo</span>
   </div>
-</header>
+</header> -->
 
 <!-- HERO -->
 <div class="hero">
   <div class="hero-tag">BUFR · ML Inference</div>
   <h2>Detect premature balloon burst — <span>automatically.</span></h2>
   <p>Upload a BUFR radiosonde file to diagnose the cause of balloon failure using an ML classifier trained on atmospheric feature profiles.</p>
-  <div class="cause-chips">
-    <span class="chip">🧊 Deep Moisture Icing</span>
-    <span class="chip">❄️ Severe Icing</span>
-    <span class="chip">🌪 High Updraft</span>
-    <span class="chip">⚡ Atmospheric Instability</span>
-    <span class="chip">💨 Boundary Layer Shear</span>
-    <span class="chip">🏜 Dry Layer</span>
-    <span class="chip">🚀 Launch Failure</span>
-    <span class="chip">📡 Sensor Failure</span>
-    <span class="chip">✅ Nominal</span>
-  </div>
 </div>
 
 <!-- MAIN CONTENT -->
@@ -755,7 +744,7 @@
       <button class="tab-btn active" onclick="switchTab(this,'descTab')">📋 Description</button>
       <button class="tab-btn" onclick="switchTab(this,'evidTab')">🔍 Evidence</button>
       <button class="tab-btn" onclick="switchTab(this,'probTab')">📊 Probabilities</button>
-      <button class="tab-btn" onclick="switchTab(this,'profTab')">📈 Profile Chart</button>
+      <!-- <button class="tab-btn" onclick="switchTab(this,'profTab')">📈 Profile Chart</button> -->
       <button class="tab-btn" onclick="switchTab(this,'featTab')">🔬 Features</button>
     </div>
 
@@ -775,12 +764,12 @@
     </div>
 
     <!-- Profile Chart -->
-    <div class="tab-panel" id="profTab">
+    <!-- <div class="tab-panel" id="profTab">
       <canvas id="profileChart"></canvas>
       <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">
         ℹ️ Vertical profile graph is synthesized from feature summary values for illustration. Actual profile data requires reading the original BUFR file.
       </p>
-    </div>
+    </div>-->
 
     <!-- Features -->
     <div class="tab-panel" id="featTab">
@@ -807,7 +796,7 @@ const fileNameEl  = document.getElementById('fileNameDisplay');
 const runBtn      = document.getElementById('runBtn');
 
 let selectedFile = null;
-let profileChartInstance = null;
+//let profileChartInstance = null;
 
 // ─── CAUSE DATA ──────────────────────────────────────────────────────────────
 const CAUSE_DATA = {
@@ -1015,7 +1004,7 @@ function displayResult(result) {
   const stats = [
     { val: result.burst_pres_hpa, unit: 'hPa', lbl: 'Burst Pressure' },
     { val: result.burst_alt_m ? (result.burst_alt_m/1000).toFixed(1) : '—', unit: 'km', lbl: 'Burst Altitude' },
-    { val: result.n_levels, unit: '', lbl: 'Pressure Levels' },
+    { val: result.n_levels, unit: '', lbl: 'Sounding Levels' },
     { val: result.station_id || '—', unit: '', lbl: 'Station ID' },
   ];
   statsEl.innerHTML = stats.map(s =>
@@ -1063,7 +1052,7 @@ function displayResult(result) {
   }, 100);
 
   // Profile Chart
-  drawProfileChart(result);
+  //drawProfileChart(result);
 
   // Features table
   const featEl = document.getElementById('featTable');
@@ -1134,7 +1123,7 @@ function buildEvidence(cause, features, result) {
 }
 
 // ─── VERTICAL PROFILE CHART ──────────────────────────────────────────────────
-function drawProfileChart(result) {
+/*function drawProfileChart(result) {
   const ctx = document.getElementById('profileChart').getContext('2d');
   if (profileChartInstance) profileChartInstance.destroy();
 
@@ -1224,7 +1213,7 @@ function drawProfileChart(result) {
       }
     }
   });
-}
+}*/
 
 // ─── TABS ────────────────────────────────────────────────────────────────────
 function switchTab(btn, panelId) {

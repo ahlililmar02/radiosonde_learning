@@ -381,7 +381,7 @@ def engineer_features(flight_df: pd.DataFrame) -> dict | None:
                                   if spike_mask.any() else 0.0,
         'n_turbulent_spikes'    : int(spike_mask.sum()),
         'boundary_layer_shear'  : boundary_layer_shear if pd.notna(boundary_layer_shear) else 0.0,
-        'min_richardson'        : min_Ri,
+        'min_richardson'        : np.clip(min_Ri, -5, 5) if pd.notna(min_Ri) else np.nan,
         'ri_alt_m'              : ri_alt,
         'n_unstable_layers'     : int((f['Ri'] < 0.25).sum()),
         'icing_depth_m'         : icing_depth,
@@ -606,6 +606,7 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
             "is_premature"    : False,
             "burst_pres_hpa"  : burst_info['burst_pres_hpa'],
             "burst_alt_m"     : burst_info['burst_alt_m'],
+            "n_levels"        : burst_info['n_levels'],
             "predicted_cause" : "nominal",
             "confidence_pct"  : 100.0,
             "explanation"     : generate_explanation(
