@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Radiosonde Burst Classifier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-deep:    #0d1b3e;
+      --bg-card:    #162252;
+      --bg-panel:   #1c2e65;
+      --accent1:    #e8402a;
+      --accent2:    #4a9eff;
+      --accent3:    #34c98b;
+      --accent4:    #f5a623;
+      --text-main:  #e8eaf6;
+      --text-muted: #8891b5;
+      --border:     rgba(74, 158, 255, 0.18);
+      --glow:       rgba(74, 158, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── BACKGROUND GRID ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(74,158,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,158,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative; z-index: 10;
+      background: linear-gradient(135deg, #0a1530 0%, #162252 60%, #1a0e2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+    }
+
+    .header-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 0;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    .logo-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--accent2), #7b5ea7);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .logo-text h1 {
+      font-size: 17px; font-weight: 700; letter-spacing: 0.3px;
+      color: var(--text-main);
+    }
+
+    .logo-text p {
+      font-size: 11px; color: var(--text-muted); font-weight: 400;
+      text-transform: uppercase; letter-spacing: 1.5px;
+    }
+
+    .header-badge {
+      background: rgba(52,201,139,0.15);
+      border: 1px solid rgba(52,201,139,0.35);
+      color: var(--accent3);
+      font-size: 11px; font-weight: 600;
+      padding: 5px 12px; border-radius: 20px;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 5;
+      max-width: 1200px; margin: 0 auto;
+      padding: 52px 40px 36px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(232,64,42,0.15);
+      border: 1px solid rgba(232,64,42,0.4);
+      color: var(--accent1);
+      font-size: 11px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h2 {
+      font-size: clamp(26px, 3.5vw, 38px);
+      font-weight: 700; line-height: 1.2;
+      max-width: 680px;
+    }
+
+    .hero h2 span {
+      background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      margin-top: 16px;
+      font-size: 15px; color: var(--text-muted);
+      max-width: 560px; line-height: 1.7;
+    }
+
+    .cause-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 24px;
+    }
+
+    .chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px; color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .container {
+      position: relative; z-index: 5;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 40px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; padding: 0 20px 60px; }
+      .hero { padding: 40px 20px 28px; }
+      header { padding: 0 20px; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent2), #7b5ea7);
+    }
+
+    .card.full-width { grid-column: 1 / -1; }
+
+    .card-label {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--accent2); margin-bottom: 12px;
+    }
+
+    .card h3 {
+      font-size: 16px; font-weight: 600; margin-bottom: 8px;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 44px 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(74,158,255,0.03);
+      position: relative;
+    }
+
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent2);
+      background: rgba(74,158,255,0.08);
+      transform: translateY(-2px);
+    }
+
+    .upload-icon {
+      font-size: 48px; line-height: 1; margin-bottom: 16px;
+    }
+
+    .upload-zone h4 {
+      font-size: 17px; font-weight: 600; margin-bottom: 8px;
+    }
+
+    .upload-zone p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.6;
+    }
+
+    .upload-zone input { display: none; }
+
+    .file-selected {
+      margin-top: 20px;
+      background: rgba(52,201,139,0.1);
+      border: 1px solid rgba(52,201,139,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--accent3);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px;
+      border: none; border-radius: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent1), #c4301e);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(232,64,42,0.35);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45; cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .btn-row {
+      display: flex; gap: 12px; margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ── MODEL DIR INPUT ── */
+    .field {
+      margin-top: 16px;
+    }
+    .field label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--text-main);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: var(--accent2); }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+
+    .step-num {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent2), #7b5ea7);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+
+    .step-info h5 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .step-info p { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+    /* ── PROGRESS / LOADING ── */
+    #loadingSection {
+      display: none;
+      grid-column: 1 / -1;
+    }
+
+    .progress-steps {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .progress-step {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px;
+      background: var(--bg-panel);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      opacity: 0.45;
+      transition: all 0.3s ease;
+    }
+
+    .progress-step.active {
+      opacity: 1;
+      border-color: rgba(74,158,255,0.5);
+      background: rgba(74,158,255,0.08);
+    }
+
+    .progress-step.done {
+      opacity: 1;
+      border-color: rgba(52,201,139,0.4);
+      color: var(--accent3);
+    }
+
+    .step-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(74,158,255,0.25);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULTS ── */
+    #resultsSection { display: none; grid-column: 1 / -1; }
+
+    .result-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .verdict-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 15px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .verdict-nominal {
+      background: rgba(52,201,139,0.15);
+      border: 1px solid rgba(52,201,139,0.4);
+      color: var(--accent3);
+    }
+
+    .verdict-premature {
+      background: rgba(232,64,42,0.15);
+      border: 1px solid rgba(232,64,42,0.4);
+      color: var(--accent1);
+    }
+
+    .confidence-ring {
+      position: relative;
+      width: 90px; height: 90px; flex-shrink: 0;
+    }
+
+    .confidence-ring svg { transform: rotate(-90deg); }
+
+    .confidence-ring .ring-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+      line-height: 1;
+    }
+
+    .confidence-ring .ring-label {
+      font-size: 9px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .stat-box .stat-val {
+      font-size: 22px; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent2);
+    }
+
+    .stat-box .stat-unit {
+      font-size: 11px; color: var(--text-muted); margin-left: 3px;
+    }
+
+    .stat-box .stat-lbl {
+      font-size: 11px; color: var(--text-muted);
+      margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    /* ── CAUSE DESCRIPTION ── */
+    .cause-desc {
+      background: var(--bg-panel);
+      border-left: 3px solid var(--accent1);
+      border-radius: 0 10px 10px 0;
+      padding: 16px 18px;
+      font-size: 13px; line-height: 1.7;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .cause-name {
+      font-size: 18px; font-weight: 700;
+      margin-bottom: 10px;
+      text-transform: capitalize;
+    }
+
+    /* ── EVIDENCE BULLETS ── */
+    .evidence-list {
+      list-style: none;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .evidence-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13px; color: var(--text-muted);
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      border-radius: 8px;
+    }
+
+    .evidence-list li::before {
+      content: '▸';
+      color: var(--accent2);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ── PROBABILITY BAR CHART ── */
+    .prob-bars {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .prob-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 52px;
+      align-items: center; gap: 12px;
+    }
+
+    .prob-label {
+      font-size: 12px; color: var(--text-muted);
+      text-transform: capitalize; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .prob-track {
+      background: var(--bg-deep);
+      border-radius: 4px;
+      height: 8px; overflow: hidden;
+    }
+
+    .prob-fill {
+      height: 100%; border-radius: 4px;
+      transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .prob-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; color: var(--text-main);
+      text-align: right;
+    }
+
+    /* ── VERTICAL PROFILE CHART ── */
+    #profileChart {
+      max-height: 340px;
+    }
+
+    /* ── FEATURES TABLE ── */
+    .feat-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 600px) { .feat-table { grid-template-columns: 1fr; } }
+
+    .feat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-panel);
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .feat-key { color: var(--text-muted); }
+    .feat-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main); font-weight: 500;
+    }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: rgba(232,64,42,0.12);
+      border: 1px solid rgba(232,64,42,0.35);
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 14px; color: var(--accent1);
+      display: none;
+    }
+
+    /* ── SECTION DIVIDER ── */
+    .section-divider {
+      grid-column: 1 / -1;
+      border: none; border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; gap: 4px;
+      background: var(--bg-deep);
+      border-radius: 10px; padding: 4px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1; padding: 8px 14px;
+      background: transparent; border: none;
+      color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; border-radius: 7px;
+      text-transform: uppercase; letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--bg-panel);
+      color: var(--text-main);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 5;
+      border-top: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+
+    footer p { font-size: 12px; color: var(--text-muted); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in { animation: fadeIn 0.45s ease both; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🎈</div>
+      <div class="logo-text">
+        <h1>BurstSense</h1>
+        <p>Radiosonde Burst Cause Classifier</p>
+      </div>
+    </div>
+    <span class="header-badge">● Live Demo</span>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">BUFR · ML Inference</div>
+  <h2>Detect premature balloon burst — <span>automatically.</span></h2>
+  <p>Upload a BUFR radiosonde file to diagnose the cause of balloon failure using an ML classifier trained on atmospheric feature profiles.</p>
+  <div class="cause-chips">
+    <span class="chip">🧊 Deep Moisture Icing</span>
+    <span class="chip">❄️ Severe Icing</span>
+    <span class="chip">🌪 High Updraft</span>
+    <span class="chip">⚡ Atmospheric Instability</span>
+    <span class="chip">💨 Boundary Layer Shear</span>
+    <span class="chip">🏜 Dry Layer</span>
+    <span class="chip">🚀 Launch Failure</span>
+    <span class="chip">📡 Sensor Failure</span>
+    <span class="chip">✅ Nominal</span>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- UPLOAD CARD -->
+  <div class="card">
+    <div class="card-label">Step 1 — Input</div>
+    <h3>Upload BUFR File</h3>
+    <div style="margin-top:16px;">
+      <div class="upload-zone" id="dropZone">
+        <div class="upload-icon">📡</div>
+        <h4>Drop your BUFR file here</h4>
+        <p>Supports standard WMO radiosonde BUFR format<br>(.bin, .bufr, or any binary BUFR)</p>
+        <input type="file" id="fileInput" accept=".bin,.bufr,.bfr,*">
+        <div id="fileSelectedInfo" class="file-selected" style="display:none;">
+          <span>📄</span>
+          <span id="fileNameDisplay"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Model Directory Path</label>
+        <input type="text" id="modelDir" value="models" placeholder="e.g. models/ or /absolute/path/to/models" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="runBtn" disabled onclick="runClassifier()">
+          ▶ Run Classifier
+        </button>
+        <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS CARD -->
+  <div class="card">
+    <div class="card-label">How It Works</div>
+    <h3>6-Step Inference Pipeline</h3>
+    <div style="margin-top:18px;" class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <h5>Parse BUFR</h5>
+          <p>Decode binary radiosonde data into a pressure-level DataFrame using eccodes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <h5>Clean Profile</h5>
+          <p>Remove sentinel values (−9999, 2e20) and sort levels surface → top.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <h5>Burst Detection</h5>
+          <p>Apply WMO 30 hPa ceiling threshold to classify as premature or nominal.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <h5>Feature Engineering</h5>
+          <p>Compute shear, Richardson number, icing index, moisture depth and 20+ features from the vertical profile.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-info">
+          <h5>Load Saved Model</h5>
+          <p>Read the trained classifier, scaler, label encoder and feature column list from disk.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-info">
+          <h5>Predict & Explain</h5>
+          <p>Scale features, run ML inference, and generate evidence-backed explanation with full probability breakdown.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="card" id="loadingSection">
+    <div class="card-label">Processing</div>
+    <h3>Running Pipeline…</h3>
+    <div style="margin-top:20px;" class="progress-steps" id="progressSteps">
+      <div class="progress-step" data-step="1"><span class="step-icon">📂</span> Parsing BUFR file…</div>
+      <div class="progress-step" data-step="2"><span class="step-icon">🧹</span> Cleaning profile data…</div>
+      <div class="progress-step" data-step="3"><span class="step-icon">📏</span> Checking 30 hPa threshold…</div>
+      <div class="progress-step" data-step="4"><span class="step-icon">⚙️</span> Engineering atmospheric features…</div>
+      <div class="progress-step" data-step="5"><span class="step-icon">🤖</span> Loading saved model &amp; scaler…</div>
+      <div class="progress-step" data-step="6"><span class="step-icon">✨</span> Running classifier &amp; generating explanation…</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card full-width animate-in" id="resultsSection">
+    <div class="card-label">Classification Result</div>
+
+    <div class="result-header">
+      <div>
+        <div id="verdictBadge" class="verdict-badge"></div>
+        <div class="cause-name" id="causeName" style="margin-top:14px;"></div>
+      </div>
+      <div class="confidence-ring" id="confRing">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="#162252" stroke-width="8"/>
+          <circle id="confArc" cx="45" cy="45" r="38" fill="none"
+                  stroke="#4a9eff" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="239" stroke-dashoffset="239"
+                  style="transition: stroke-dashoffset 1s ease;"/>
+        </svg>
+        <div class="ring-text">
+          <span id="confPct">0%</span>
+          <span class="ring-label">Confidence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIGHT STATS -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'descTab')">📋 Description</button>
+      <button class="tab-btn" onclick="switchTab(this,'evidTab')">🔍 Evidence</button>
+      <button class="tab-btn" onclick="switchTab(this,'probTab')">📊 Probabilities</button>
+      <button class="tab-btn" onclick="switchTab(this,'profTab')">📈 Profile Chart</button>
+      <button class="tab-btn" onclick="switchTab(this,'featTab')">🔬 Features</button>
+    </div>
+
+    <!-- Description -->
+    <div class="tab-panel active" id="descTab">
+      <div class="cause-desc" id="causeDesc"></div>
+    </div>
+
+    <!-- Evidence -->
+    <div class="tab-panel" id="evidTab">
+      <ul class="evidence-list" id="evidList"></ul>
+    </div>
+
+    <!-- Probabilities -->
+    <div class="tab-panel" id="probTab">
+      <div class="prob-bars" id="probBars"></div>
+    </div>
+
+    <!-- Profile Chart -->
+    <div class="tab-panel" id="profTab">
+      <canvas id="profileChart"></canvas>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">
+        ℹ️ Vertical profile graph is synthesized from feature summary values for illustration. Actual profile data requires reading the original BUFR file.
+      </p>
+    </div>
+
+    <!-- Features -->
+    <div class="tab-panel" id="featTab">
+      <div class="feat-table" id="featTable"></div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>BurstSense — Radiosonde Burst Cause Classifier · Built with <code>eccodes</code>, <code>scikit-learn</code>, <code>pandas</code></p>
+  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;">bufr_burst_inference.py</p>
+</footer>
+
+<script>
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileSelInfo = document.getElementById('fileSelectedInfo');
+const fileNameEl  = document.getElementById('fileNameDisplay');
+const runBtn      = document.getElementById('runBtn');
+
+let selectedFile = null;
+let profileChartInstance = null;
+
+// ─── CAUSE DATA ──────────────────────────────────────────────────────────────
+const CAUSE_DATA = {
+  launch_failure: {
+    description: "The balloon burst very early with no atmospheric stressor present. Burst pressure was extremely high (low altitude). Likely caused by balloon damage before or at launch, under-inflation, or equipment defect. Recommend checking ground handling logs for this flight.",
+    color: '#f5a623',
+    icon: '🚀'
+  },
+  deep_moisture_icing: {
+    description: "A deep supercooled liquid water layer was detected during ascent. The icing layer extended over a significant altitude range with near-saturated conditions (heavy precipitable water and moisture). Ice accumulation on the balloon membrane over this extended layer caused progressive stress until burst.",
+    color: '#4a9eff',
+    icon: '🧊'
+  },
+  severe_icing: {
+    description: "A highly concentrated supercooled zone was detected. Although the icing layer was thin, the icing intensity was very high — suggesting a dense supercooled cloud layer. Rapid ice accumulation caused membrane failure.",
+    color: '#7b5ea7',
+    icon: '❄️'
+  },
+  high_updraft: {
+    description: "Large ascent rate spikes were detected combined with unstable atmospheric layers and high wind speeds. The balloon flew through turbulent air with strong updrafts and dynamic instability, likely associated with deep convection. Mechanical stress from rapid acceleration and deceleration caused premature burst.",
+    color: '#e8402a',
+    icon: '🌪'
+  },
+  atmospheric_instability: {
+    description: "Dynamic atmospheric instability was detected at high altitude near the tropopause. Richardson number minimum was found in the upper troposphere, combined with elevated shear. The balloon survived the lower atmosphere but was stressed by wind shear (Clear Air Turbulence) near the jet stream or tropopause.",
+    color: '#34c98b',
+    icon: '⚡'
+  },
+  dry_layer: {
+    description: "The atmosphere was anomalously dry (high dewpoint depression) with elevated upper-level shear and unstable layers. This is consistent with clear-air turbulence in dry conditions — unusual for Indonesia. Another possibility is that the balloon ascends through a very dry, cold layer, builds up friction, and pops from static electricity.",
+    color: '#f5a623',
+    icon: '🏜'
+  },
+  boundary_layer_shear: {
+    description: "Strong wind shear was detected in the lower layer with rapid changes in wind speed or direction. The resulting mechanical stress and structural deformation of the latex membrane caused it to tear well before reaching upper altitudes.",
+    color: '#ff6b6b',
+    icon: '💨'
+  },
+  sensor_failure: {
+    description: "A cold point detected at an anomalously low altitude suggests a sensor failure or data error rather than a physical burst cause. Check the raw data and metadata for this flight for signs of sensor issues or data corruption.",
+    color: '#8891b5',
+    icon: '📡'
+  },
+  nominal: {
+    description: "The balloon reached or exceeded the 30 hPa target ceiling. This is a successful flight — no premature burst detected. All systems performed within normal parameters.",
+    color: '#34c98b',
+    icon: '✅'
+  },
+  unknown_premature: {
+    description: "The flight shows premature burst but no single atmospheric cause could be identified with confidence. The feature profile does not match any known burst cause pattern clearly.",
+    color: '#8891b5',
+    icon: '❓'
+  }
+};
+
+// ─── DEMO RESULTS (simulated for illustration) ────────────────────────────────
+// In production, this would come from a Flask/FastAPI backend calling run_pipeline()
+/* function buildDemoResult(filename) {
+  // Randomly pick a realistic-ish cause for demo purposes
+  const causes = Object.keys(CAUSE_DATA);
+  const cause = causes[Math.floor(Math.random() * (causes.length - 1))]; // exclude 'nominal' randomly
+  const confidence = 55 + Math.random() * 40;
+
+  const allProbs = {};
+  let remaining = 100 - confidence;
+  const others = causes.filter(c => c !== cause);
+  others.forEach((c, i) => {
+    const p = i === others.length - 1 ? remaining : Math.random() * remaining * 0.5;
+    allProbs[c] = parseFloat(p.toFixed(1));
+    remaining -= p;
+  });
+  allProbs[cause] = parseFloat(confidence.toFixed(1));
+
+  const isPremature = cause !== 'nominal';
+  const burstPres = isPremature ? (50 + Math.random() * 150).toFixed(1) : (8 + Math.random() * 20).toFixed(1);
+  const burstAlt = isPremature ? (8000 + Math.random() * 15000).toFixed(0) : (28000 + Math.random() * 5000).toFixed(0);
+
+  return {
+    file: filename,
+    is_premature: isPremature,
+    burst_pres_hpa: parseFloat(burstPres),
+    burst_alt_m: parseFloat(burstAlt),
+    n_levels: Math.floor(80 + Math.random() * 200),
+    predicted_cause: cause,
+    confidence_pct: parseFloat(confidence.toFixed(1)),
+    all_probabilities: allProbs,
+    features_used: {
+      burst_pres_hpa: parseFloat(burstPres),
+      burst_alt_m: parseFloat(burstAlt),
+      max_shear: parseFloat((0.01 + Math.random() * 0.1).toFixed(4)),
+      ascent_rate_mean: parseFloat((3 + Math.random() * 3).toFixed(2)),
+      ascent_rate_std: parseFloat((0.5 + Math.random() * 2).toFixed(2)),
+      n_turbulent_spikes: Math.floor(Math.random() * 20),
+      icing_depth_m: Math.floor(Math.random() * 5000),
+      icing_index: parseFloat((Math.random() * 30).toFixed(2)),
+      min_richardson: parseFloat((-0.5 + Math.random() * 2).toFixed(3)),
+      n_unstable_layers: Math.floor(Math.random() * 15),
+      boundary_layer_shear: parseFloat((Math.random() * 0.08).toFixed(4)),
+      pw_proxy: parseFloat((Math.random() * 3e6).toFixed(0)),
+      tropopause_temp_C: parseFloat((-80 + Math.random() * 30).toFixed(1)),
+      tropopause_alt_m: parseFloat((12000 + Math.random() * 6000).toFixed(0)),
+    },
+    launch_time: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
+    station_id: '96221',
+    processed_at: new Date().toISOString() + 'Z',
+    _is_demo: true,
+  };
+}*/
+
+// ─── FILE DRAG & DROP ─────────────────────────────────────────────────────────
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault(); dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  fileNameEl.textContent = file.name + '  (' + (file.size / 1024).toFixed(1) + ' KB)';
+  fileSelInfo.style.display = 'flex';
+  runBtn.disabled = false;
+}
+
+// ─── RUN CLASSIFIER ──────────────────────────────────────────────────────────
+async function runClassifier() {
+  if (!selectedFile) return;
+
+  // Show loading
+  runBtn.disabled = true;
+  document.getElementById('loadingSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+
+  const steps = document.querySelectorAll('.progress-step');
+  steps.forEach(s => { s.classList.remove('active', 'done'); });
+
+  // Animate steps
+  for (let i = 0; i < steps.length; i++) {
+    steps[i].classList.add('active');
+    const spinnerEl = document.createElement('div');
+    spinnerEl.className = 'spinner';
+    steps[i].prepend(spinnerEl);
+
+    await delay(420 + Math.random() * 380);
+
+    spinnerEl.remove();
+    steps[i].classList.remove('active');
+    steps[i].classList.add('done');
+    steps[i].querySelector('.step-icon').textContent = '✓';
+  }
+
+  await delay(300);
+
+  // In a real deployment: send selectedFile to Flask/FastAPI backend
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('model_dir', document.getElementById('modelDir').value);
+  const response = await fetch('/analyze', { method: 'POST', body: formData });
+  const result = await response.json();
+
+  // Demo mode: generate simulated result
+  // const result = buildDemoResult(selectedFile.name);
+
+  document.getElementById('loadingSection').style.display = 'none';
+  displayResult(result);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── DISPLAY RESULT ──────────────────────────────────────────────────────────
+function displayResult(result) {
+  const el = document.getElementById('resultsSection');
+  el.style.display = 'block';
+
+  const cause = result.predicted_cause;
+  const cd = CAUSE_DATA[cause] || CAUSE_DATA.unknown_premature;
+
+  // Verdict badge
+  const badge = document.getElementById('verdictBadge');
+  badge.className = 'verdict-badge ' + (result.is_premature ? 'verdict-premature' : 'verdict-nominal');
+  badge.innerHTML = (result.is_premature ? '⚠️ Premature Burst' : '✅ Nominal Flight');
+
+  // Cause name
+  document.getElementById('causeName').innerHTML =
+    `${cd.icon} ${cause.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}`;
+
+  // Confidence ring
+  const pct = result.confidence_pct;
+  document.getElementById('confPct').textContent = pct.toFixed(0) + '%';
+  const arc = document.getElementById('confArc');
+  arc.setAttribute('stroke', cd.color);
+  setTimeout(() => {
+    arc.style.strokeDashoffset = 239 - (239 * pct / 100);
+  }, 100);
+
+  // Stats grid
+  const statsEl = document.getElementById('statsGrid');
+  const stats = [
+    { val: result.burst_pres_hpa, unit: 'hPa', lbl: 'Burst Pressure' },
+    { val: result.burst_alt_m ? (result.burst_alt_m/1000).toFixed(1) : '—', unit: 'km', lbl: 'Burst Altitude' },
+    { val: result.n_levels, unit: '', lbl: 'Pressure Levels' },
+    { val: result.station_id || '—', unit: '', lbl: 'Station ID' },
+  ];
+  statsEl.innerHTML = stats.map(s =>
+    `<div class="stat-box">
+      <div class="stat-val">${s.val}<span class="stat-unit">${s.unit}</span></div>
+      <div class="stat-lbl">${s.lbl}</div>
+    </div>`
+  ).join('');
+
+  // Demo note
+  /*if (result._is_demo) {
+    const note = document.createElement('p');
+    note.style.cssText = 'font-size:11px;color:var(--text-muted);margin-bottom:16px;padding:8px 12px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:8px;';
+    note.innerHTML = '⚠️ <strong>Demo mode</strong> — results are simulated. Connect a Python backend (Flask/FastAPI) calling <code>run_pipeline()</code> to get real inference.';
+    statsEl.before(note);
+  }*/
+
+  // Cause description
+  document.getElementById('causeDesc').innerHTML = `
+    <p>${cd.description}</p>`;
+
+  // Evidence (from features)
+  const evidList = document.getElementById('evidList');
+  const ev = buildEvidence(cause, result.features_used || {}, result);
+  evidList.innerHTML = ev.map(e => `<li>${e}</li>`).join('');
+
+  // Probability bars
+  const probEl = document.getElementById('probBars');
+  const sorted = Object.entries(result.all_probabilities || {})
+    .sort((a,b) => b[1] - a[1]);
+  const colors = ['#4a9eff','#34c98b','#e8402a','#f5a623','#7b5ea7','#ff6b6b','#8891b5','#34c98b','#4a9eff','#f5a623'];
+  probEl.innerHTML = sorted.map(([c, p], i) =>
+    `<div class="prob-row">
+      <div class="prob-label">${c.replace(/_/g,' ')}</div>
+      <div class="prob-track">
+        <div class="prob-fill" style="width:0%;background:${colors[i%colors.length]}" data-w="${p}"></div>
+      </div>
+      <div class="prob-pct">${p.toFixed(1)}%</div>
+    </div>`
+  ).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.prob-fill').forEach(b => {
+      b.style.width = b.dataset.w + '%';
+    });
+  }, 100);
+
+  // Profile Chart
+  drawProfileChart(result);
+
+  // Features table
+  const featEl = document.getElementById('featTable');
+  const feats = result.features_used || {};
+  featEl.innerHTML = Object.entries(feats).map(([k, v]) => {
+    const vStr = typeof v === 'number'
+      ? (Math.abs(v) > 999 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toFixed(3))
+      : String(v);
+    return `<div class="feat-row">
+      <span class="feat-key">${k.replace(/_/g,' ')}</span>
+      <span class="feat-val">${vStr}</span>
+    </div>`;
+  }).join('');
+
+  // Switch to description tab by default
+  switchTab(document.querySelector('.tab-btn'), 'descTab');
+  runBtn.disabled = false;
+}
+
+// ─── BUILD EVIDENCE LIST ─────────────────────────────────────────────────────
+function buildEvidence(cause, features, result) {
+  const ev = [];
+  const f = features;
+
+  if (result.burst_pres_hpa) ev.push(`Burst pressure: <strong>${result.burst_pres_hpa} hPa</strong> (WMO ceiling: 30 hPa)`);
+  if (result.burst_alt_m) ev.push(`Burst altitude: <strong>${(result.burst_alt_m/1000).toFixed(1)} km</strong>`);
+
+  const checks = {
+    launch_failure: [
+      [f.burst_pres_hpa > 150, `Burst pressure ${f.burst_pres_hpa} hPa — very high, balloon didn't leave lower troposphere`],
+      [f.n_turbulent_spikes < 10, `Low turbulent spike count (${f.n_turbulent_spikes}) — atmosphere was calm`],
+    ],
+    deep_moisture_icing: [
+      [f.icing_depth_m > 3000, `Supercooled layer depth: ${f.icing_depth_m?.toFixed(0)} m — extensive ice formation zone`],
+      [f.pw_proxy > 1e6, `High column moisture (pw_proxy=${(f.pw_proxy/1e6)?.toFixed(2)}×10⁶) — moist profile`],
+    ],
+    severe_icing: [
+      [f.icing_index > 10, `Icing index: ${f.icing_index?.toFixed(1)} — intense supercooled zone`],
+    ],
+    high_updraft: [
+      [f.ascent_rate_max_spike > 3, `Maximum ascent rate spike: ${f.ascent_rate_max_spike?.toFixed(1)} m/s — strong updraft`],
+      [f.ascent_rate_std > 1, `High ascent rate variability (σ=${f.ascent_rate_std?.toFixed(2)} m/s)`],
+      [f.min_richardson < 0.5, `Richardson number: ${f.min_richardson?.toFixed(3)} — dynamic instability confirmed`],
+    ],
+    atmospheric_instability: [
+      [f.ri_alt_m > 10000, `Ri minimum at altitude ${(f.ri_alt_m/1000)?.toFixed(1)} km — near tropopause`],
+      [f.n_unstable_layers > 3, `${f.n_unstable_layers} dynamically unstable layers detected (Ri < 0.25)`],
+    ],
+    dry_layer: [
+      [f.pw_proxy < 5e5, `Very low column moisture — anomalously dry atmosphere`],
+    ],
+    boundary_layer_shear: [
+      [f.boundary_layer_shear > 0.03, `Boundary layer shear: ${f.boundary_layer_shear?.toFixed(4)} m/s per 100 m`],
+      [f.max_shear > 0.05, `Peak wind shear: ${f.max_shear?.toFixed(4)} m/s per 100 m`],
+    ],
+  };
+
+  const relevant = checks[cause] || [];
+  relevant.forEach(([cond, msg]) => { if (cond) ev.push(msg); });
+
+  if (f.tropopause_temp_C !== undefined)
+    ev.push(`Tropopause temperature: <strong>${f.tropopause_temp_C?.toFixed(1)}°C</strong> at ${(f.tropopause_alt_m/1000)?.toFixed(1)} km`);
+
+  if (ev.length === 0)
+    ev.push('Feature pattern matched cluster profile from training data (individual thresholds within range but overall combination matches this cause).');
+
+  return ev;
+}
+
+// ─── VERTICAL PROFILE CHART ──────────────────────────────────────────────────
+function drawProfileChart(result) {
+  const ctx = document.getElementById('profileChart').getContext('2d');
+  if (profileChartInstance) profileChartInstance.destroy();
+
+  // Synthesize illustrative profile from feature summary
+  const burstAlt = result.burst_alt_m || 15000;
+  const n = 30;
+  const altitudes = Array.from({length: n}, (_, i) => Math.round(i * burstAlt / (n-1)));
+
+  // Temp: lapse from ~30°C at surface to cold point
+  const tropoAlt = result.features_used?.tropopause_alt_m || burstAlt * 0.85;
+  const tropoTemp = result.features_used?.tropopause_temp_C || -70;
+  const temps = altitudes.map(a => {
+    const frac = Math.min(a / tropoAlt, 1);
+    return parseFloat((28 - frac * (28 - tropoTemp) + (Math.random()-0.5)*2).toFixed(1));
+  });
+
+  // Wind speed
+  const maxWind = result.features_used?.max_wind_speed_mps || 15;
+  const winds = altitudes.map((a, i) => {
+    const base = 3 + (a/burstAlt) * maxWind;
+    return parseFloat((base + (Math.random()-0.5)*3).toFixed(1));
+  });
+
+  profileChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: altitudes.map(a => (a/1000).toFixed(1) + ' km'),
+      datasets: [
+        {
+          label: 'Temperature (°C)',
+          data: temps,
+          borderColor: '#e8402a',
+          backgroundColor: 'rgba(232,64,42,0.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          yAxisID: 'yTemp',
+        },
+        {
+          label: 'Wind Speed (m/s)',
+          data: winds,
+          borderColor: '#4a9eff',
+          backgroundColor: 'rgba(74,158,255,0.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          yAxisID: 'yWind',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#8891b5', font: { family: 'Space Grotesk', size: 12 } }
+        },
+        tooltip: {
+          backgroundColor: '#162252',
+          borderColor: 'rgba(74,158,255,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8eaf6',
+          bodyColor: '#8891b5',
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#8891b5', maxTicksLimit: 8,
+            font: { family: 'JetBrains Mono', size: 10 }
+          },
+          grid: { color: 'rgba(74,158,255,0.07)' },
+          title: { display: true, text: 'Altitude', color: '#8891b5' }
+        },
+        yTemp: {
+          type: 'linear', position: 'left',
+          ticks: { color: '#e8402a', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { color: 'rgba(74,158,255,0.07)' },
+          title: { display: true, text: 'Temp (°C)', color: '#e8402a' }
+        },
+        yWind: {
+          type: 'linear', position: 'right',
+          ticks: { color: '#4a9eff', font: { family: 'JetBrains Mono', size: 10 } },
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'Wind (m/s)', color: '#4a9eff' }
+        }
+      }
+    }
+  });
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(btn, panelId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ─── RESET ───────────────────────────────────────────────────────────────────
+function resetAll() {
+  selectedFile = null;
+  fileInput.value = '';
+  fileSelInfo.style.display = 'none';
+  runBtn.disabled = true;
+  document.getElementById('loadingSection').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.querySelectorAll('.progress-step').forEach(s => {
+    s.classList.remove('active', 'done');
+    s.querySelector('.step-icon').textContent = ['📂','🧹','📏','⚙️','🤖','✨'][
+      parseInt(s.dataset.step) - 1
+    ];
+  });
+}
+</script>
+</body>
+</html>
