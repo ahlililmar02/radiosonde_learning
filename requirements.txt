@@ -3,3 +3,6 @@ pandas
 scikit-learn
 umap-learn
 joblib
+eccodes
+flask
+werkzeug

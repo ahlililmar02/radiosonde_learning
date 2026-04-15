@@ -161,15 +161,30 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
 
         max_len = max(lengths)
 
+        import numpy as np
+
         clean_data = {}
+
+        
         for k, v in data.items():
-            if len(v) == max_len:
-                clean_data[k] = v
-            else:
-                print(f"  [skip] {k}: length {len(v)} != {max_len}")
+            v = np.asarray(v, dtype=float)  # ✅ FORCE FLOAT HERE
+
+            if len(v) < max_len:
+                print(f"  [pad] {k}: {len(v)} → {max_len}")
+                v = np.pad(v, (0, max_len - len(v)), constant_values=np.nan)
+            elif len(v) > max_len:
+                print(f"  [trim] {k}: {len(v)} → {max_len}")
+                v = v[:max_len]
+
+            clean_data[k] = v
 
         df = pd.DataFrame(clean_data)
-
+        print("\n=== HEAD ===")
+        print(df.head(10))
+        print("\n=== DATAFRAME INFO ===")
+        print("Columns:", df.columns.tolist())
+        print("Shape:", df.shape)
+        
         # Unit conversions
         if 'temp_K'      in df.columns:
             df['temp_C']      = df['temp_K']      - 273.15
@@ -720,7 +735,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         # No args — run on the file from your code
         result = run_pipeline(
-            "data/A_IUSG51WION121200_C_WIIX_20251012120000.bin",
+            "data/A_IUSG51WION111200_C_WIIX_20251011120000.bin",
             model_dir="models"
         )
     else:
