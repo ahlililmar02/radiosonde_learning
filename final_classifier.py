@@ -509,8 +509,8 @@ EVIDENCE_THRESHOLDS = {
     },
     'dry_layer': {
         'moist_dd_mean'       : ('high',  5.0,  'dewpoint depression was large ({:.1f}°C) — very dry atmosphere'),
-        'moist_index'         : ('low',   1e5,  'moisture burden was very low — anomalously dry for Indonesia'),
-        'bulk_shear_upper'    : ('high',  0.04, 'upper-level shear elevated ({:.3f} m/s per 100m)'),
+        'moist_index'         : ('low',   3.5e5,  'moisture burden was very low {:.3f} — anomalously dry for Indonesia'),
+        'pw_proxy  '          : ('low',  0.04, 'upper-level shear elevated ({:.3f} m/s per 100m)'),
     },
     'lower_wind_shear': {
         'max_shear'           : ('high',  0.05, 'maximum wind shear was {:.3f} m/s per 100m'),

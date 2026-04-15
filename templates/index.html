@@ -1005,7 +1005,7 @@ function displayResult(result) {
     { val: result.burst_pres_hpa, unit: 'hPa', lbl: 'Burst Pressure' },
     { val: result.burst_alt_m ? (result.burst_alt_m/1000).toFixed(1) : '—', unit: 'km', lbl: 'Burst Altitude' },
     { val: result.n_levels, unit: '', lbl: 'Sounding Levels' },
-    { val: result.station_id || '—', unit: '', lbl: 'Station Number' },
+    { val: result.station_id || '—', unit: '', lbl: 'Station ID' },
   ];
   statsEl.innerHTML = stats.map(s =>
     `<div class="stat-box">
@@ -1112,9 +1112,6 @@ function buildEvidence(cause, features, result) {
 
   const relevant = checks[cause] || [];
   relevant.forEach(([cond, msg]) => { if (cond) ev.push(msg); });
-
-  if (f.tropopause_temp_C !== undefined)
-    ev.push(`Tropopause temperature: <strong>${f.tropopause_temp_C?.toFixed(1)}°C</strong> at ${(f.tropopause_alt_m/1000)?.toFixed(1)} km`);
 
   if (ev.length === 0)
     ev.push('Feature pattern matched cluster profile from training data (individual thresholds within range but overall combination matches this cause).');
