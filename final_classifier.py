@@ -105,23 +105,30 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
     Parse a BUFR radiosonde file into a pressure-level DataFrame.
     Returns an empty DataFrame if parsing fails.
     """
+
     with open(file_path, 'rb') as f:
         msgid = eccodes.codes_bufr_new_from_file(f)
         if msgid is None:
             return pd.DataFrame()
 
+        # Unpack BUFR
         eccodes.codes_set(msgid, 'unpack', 1)
 
+        # ==============================
+        # Profile variables
+        # ==============================
         profile_keys = {
-            'pressure'                      : 'pressure_Pa',
-            'airTemperature'                : 'temp_K',
-            'dewpointTemperature'           : 'dewpoint_K',
-            'windDirection'                 : 'wind_dir_deg',
-            'windSpeed'                     : 'wind_speed_mps',
+            'pressure': 'pressure_Pa',
+            'airTemperature': 'temp_K',
+            'dewpointTemperature': 'dewpoint_K',
+            'windDirection': 'wind_dir_deg',
+            'windSpeed': 'wind_speed_mps',
             'nonCoordinateGeopotentialHeight': 'height_m',
         }
 
-        # Try to get launch time from BUFR header
+        # ==============================
+        # Launch time
+        # ==============================
         launch_time = None
         try:
             year   = eccodes.codes_get(msgid, 'year')
@@ -133,17 +140,10 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
         except Exception:
             pass
 
-        # Try to get station info
-        station_id = None
-        try:
-            station_id = eccodes.codes_get(msgid, 'stationNumber')
-        except Exception:
-            try:
-                station_id = eccodes.codes_get(msgid, 'stationOrSiteName')
-            except Exception:
-                pass
-
-        data    = {}
+        # ==============================
+        # Extract profile arrays
+        # ==============================
+        data = {}
         lengths = []
 
         for bufr_key, df_name in profile_keys.items():
@@ -154,52 +154,95 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
             except eccodes.KeyValueNotFoundError:
                 continue
 
-        eccodes.codes_release(msgid)
-
         if not lengths:
+            eccodes.codes_release(msgid)
             return pd.DataFrame()
 
         max_len = max(lengths)
 
-        import numpy as np
-
         clean_data = {}
 
-        
         for k, v in data.items():
-            v = np.asarray(v, dtype=float)  # ✅ FORCE FLOAT HERE
+            v = np.asarray(v, dtype=float)
 
             if len(v) < max_len:
-                print(f"  [pad] {k}: {len(v)} → {max_len}")
+                print(f"[pad] {k}: {len(v)} → {max_len}")
                 v = np.pad(v, (0, max_len - len(v)), constant_values=np.nan)
+
             elif len(v) > max_len:
-                print(f"  [trim] {k}: {len(v)} → {max_len}")
+                print(f"[trim] {k}: {len(v)} → {max_len}")
                 v = v[:max_len]
 
             clean_data[k] = v
 
+        # ==============================
+        # Station info (FIXED POSITION)
+        # ==============================
+        station_id = None
+        station_name = None
+
+        block = None
+        station = None
+        wigos = None
+
+        # Try WIGOS first (best modern ID)
+        try:
+            wigos = eccodes.codes_get(msgid, 'wigosStationIdentifier')
+            if wigos not in [None, '', 'missing']:
+                print(f"[station] wigos: {wigos}")
+                station_id = int(str(wigos).split('-')[-1])
+        except:
+            pass
+
+        # Fallback: block + station number
+        if station_id is None:
+            try:
+                block = eccodes.codes_get(msgid, 'blockNumber')
+                station = eccodes.codes_get(msgid, 'stationNumber')
+
+                if block is not None and station is not None:
+                    station_id = int(f"{int(block):02d}{int(station):03d}")
+                    print(f"[station] block+station: {block}+{station} → {station_id}")
+            except:
+                pass
+
+        # ==============================
+        # Release BUFR (AFTER all reads)
+        # ==============================
+        eccodes.codes_release(msgid)
+
+        # ==============================
+        # Build DataFrame
+        # ==============================
         df = pd.DataFrame(clean_data)
+
         print("\n=== HEAD ===")
         print(df.head(10))
+
         print("\n=== DATAFRAME INFO ===")
         print("Columns:", df.columns.tolist())
         print("Shape:", df.shape)
-        
+
+        # ==============================
         # Unit conversions
-        if 'temp_K'      in df.columns:
-            df['temp_C']      = df['temp_K']      - 273.15
-        if 'dewpoint_K'  in df.columns:
-            df['dewpoint_C']  = df['dewpoint_K']  - 273.15
+        # ==============================
+        if 'temp_K' in df.columns:
+            df['temp_C'] = df['temp_K'] - 273.15
+
+        if 'dewpoint_K' in df.columns:
+            df['dewpoint_C'] = df['dewpoint_K'] - 273.15
+
         if 'pressure_Pa' in df.columns:
             df['pressure_hPa'] = df['pressure_Pa'] / 100.0
 
-        # Add metadata columns
+        # ==============================
+        # Metadata columns
+        # ==============================
         df['launch_time'] = launch_time
-        df['station_id']  = station_id
+        df['station_id'] = station_id
         df['source_file'] = Path(file_path).name
 
         return df
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 3. PREMATURE BURST DETECTION

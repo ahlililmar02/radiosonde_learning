@@ -1005,7 +1005,7 @@ function displayResult(result) {
     { val: result.burst_pres_hpa, unit: 'hPa', lbl: 'Burst Pressure' },
     { val: result.burst_alt_m ? (result.burst_alt_m/1000).toFixed(1) : '—', unit: 'km', lbl: 'Burst Altitude' },
     { val: result.n_levels, unit: '', lbl: 'Sounding Levels' },
-    { val: result.station_id || '—', unit: '', lbl: 'Station ID' },
+    { val: result.station_id || '—', unit: '', lbl: 'Station Number' },
   ];
   statsEl.innerHTML = stats.map(s =>
     `<div class="stat-box">
