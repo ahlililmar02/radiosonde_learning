@@ -1,25 +1,25 @@
 from flask import Flask, render_template, request, jsonify
 import os
 from werkzeug.utils import secure_filename
-# Assuming your script is named final_classifier.py
-from final_classifier import run_pipeline
+from draft.secondary_classifier import run_pipeline as run_pipeline_v2
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MODEL_DIR'] = 'models'
+app.config['MODEL_DIR_V2'] = 'draft/models_v2'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+@app.route('/v2')
+def index_v2():
+    return render_template('index_v2.html')
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
+@app.route('/analyze_v2', methods=['POST'])
+def analyze_v2():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-    
+
     file = request.files['file']
-    model_dir = request.form.get('model_dir', app.config['MODEL_DIR'])
+    model_dir = request.form.get('model_dir', app.config['MODEL_DIR_V2'])
 
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
@@ -29,7 +29,7 @@ def analyze():
     file.save(filepath)
 
     try:
-        result = run_pipeline(filepath, model_dir=model_dir)
+        result = run_pipeline_v2(filepath, model_dir=model_dir)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -1,11 +1,32 @@
+# Local-only data and environment
 data/
 igra_v2_data.csv
 .python-version
-pyproject.toml
 .venv/
-uv.lock
 wyoming/
 research/
 rason_data.db
-draft/
-data-format.txt
+__pycache__/
+uploads/
+
+# v1 artifacts (not used by the v2 pipeline)
+models/
+draft/data/
+draft/data-format.txt
+draft/draft_v1/
+draft/classifier_v1.ipynb
+draft/classifier_v2.ipynb
+draft/encoder_*.pkl
+draft/xgb_*.json
+draft/importance_*.png
+draft/distribution_analysis.png
+draft/combined_codes_output.csv
+draft/models/
+draft/final_classifier.py
+
+# scratch / debug output
+cell_dump*.txt
+cell4_dump.txt
+combined_codes_output.csv
+distribution_analysis.png
+training_run_tuned.txt

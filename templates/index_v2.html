@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Radiosonde Burst Classifier — v2 (Secondary Cause)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-deep:    #0d1b3e;
+      --bg-card:    #162252;
+      --bg-panel:   #1c2e65;
+      --accent1:    #e8402a;
+      --accent2:    #4a9eff;
+      --accent3:    #34c98b;
+      --accent4:    #f5a623;
+      --text-main:  #e8eaf6;
+      --text-muted: #8891b5;
+      --border:     rgba(74, 158, 255, 0.18);
+      --glow:       rgba(74, 158, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-main);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(74,158,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74,158,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 5;
+      max-width: 1200px; margin: 0 auto;
+      padding: 52px 40px 36px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(123,94,167,0.18);
+      border: 1px solid rgba(123,94,167,0.45);
+      color: #b79bff;
+      font-size: 11px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px;
+      letter-spacing: 1.2px; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h2 {
+      font-size: clamp(26px, 3.5vw, 38px);
+      font-weight: 700; line-height: 1.2;
+      max-width: 720px;
+    }
+
+    .hero h2 span {
+      background: linear-gradient(90deg, var(--accent2), #b79bff);
+      background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      margin-top: 16px;
+      font-size: 15px; color: var(--text-muted);
+      max-width: 620px; line-height: 1.7;
+    }
+
+    .hero .nav-link {
+      display: inline-block; margin-top: 18px;
+      font-size: 12px; color: var(--accent2);
+      text-decoration: none; border-bottom: 1px dashed var(--accent2);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .container {
+      position: relative; z-index: 5;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 40px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; padding: 0 20px 60px; }
+      .hero { padding: 40px 20px 28px; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent2), #7b5ea7);
+    }
+
+    .card.full-width { grid-column: 1 / -1; }
+
+    .card-label {
+      font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 2px;
+      color: var(--accent2); margin-bottom: 12px;
+    }
+
+    .card h3 {
+      font-size: 16px; font-weight: 600; margin-bottom: 8px;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 44px 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(74,158,255,0.03);
+      position: relative;
+    }
+
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent2);
+      background: rgba(74,158,255,0.08);
+      transform: translateY(-2px);
+    }
+
+    .upload-icon {
+      font-size: 48px; line-height: 1; margin-bottom: 16px;
+    }
+
+    .upload-zone h4 {
+      font-size: 17px; font-weight: 600; margin-bottom: 8px;
+    }
+
+    .upload-zone p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.6;
+    }
+
+    .upload-zone input { display: none; }
+
+    .file-selected {
+      margin-top: 20px;
+      background: rgba(52,201,139,0.1);
+      border: 1px solid rgba(52,201,139,0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--accent3);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px;
+      border: none; border-radius: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7b5ea7, #4a9eff);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(123,94,167,0.35);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45; cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .btn-row {
+      display: flex; gap: 12px; margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ── MODEL DIR INPUT ── */
+    .field { margin-top: 16px; }
+    .field label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--text-main);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: var(--accent2); }
+
+    /* ── HOW IT WORKS ── */
+    .steps { display: flex; flex-direction: column; gap: 14px; }
+
+    .step { display: flex; align-items: flex-start; gap: 14px; }
+
+    .step-num {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent2), #7b5ea7);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+
+    .step-info h5 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .step-info p { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+    /* ── PROGRESS / LOADING ── */
+    #loadingSection { display: none; grid-column: 1 / -1; }
+
+    .progress-steps { display: flex; flex-direction: column; gap: 12px; }
+
+    .progress-step {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 16px;
+      background: var(--bg-panel);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      opacity: 0.45;
+      transition: all 0.3s ease;
+    }
+
+    .progress-step.active {
+      opacity: 1;
+      border-color: rgba(74,158,255,0.5);
+      background: rgba(74,158,255,0.08);
+    }
+
+    .progress-step.done {
+      opacity: 1;
+      border-color: rgba(52,201,139,0.4);
+      color: var(--accent3);
+    }
+
+    .step-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(74,158,255,0.25);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULTS ── */
+    #resultsSection { display: none; grid-column: 1 / -1; }
+
+    .result-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .verdict-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 15px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .verdict-nominal {
+      background: rgba(52,201,139,0.15);
+      border: 1px solid rgba(52,201,139,0.4);
+      color: var(--accent3);
+    }
+
+    .verdict-premature {
+      background: rgba(232,64,42,0.15);
+      border: 1px solid rgba(232,64,42,0.4);
+      color: var(--accent1);
+    }
+
+    .confidence-ring { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+    .confidence-ring svg { transform: rotate(-90deg); }
+    .confidence-ring .ring-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; line-height: 1;
+    }
+    .confidence-ring .ring-label {
+      font-size: 9px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .stat-box .stat-val {
+      font-size: 22px; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent2);
+    }
+
+    .stat-box .stat-unit { font-size: 11px; color: var(--text-muted); margin-left: 3px; }
+
+    .stat-box .stat-lbl {
+      font-size: 11px; color: var(--text-muted);
+      margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    /* ── CAUSE DESCRIPTION ── */
+    .cause-desc {
+      background: var(--bg-panel);
+      border-left: 3px solid #7b5ea7;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 18px;
+      font-size: 13px; line-height: 1.7;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .cause-name { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+
+    /* ── LABEL CODE BADGES ── */
+    .code-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .code-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px;
+      background: rgba(123,94,167,0.15); color: #b9a4e0;
+      border: 1px solid rgba(123,94,167,0.35);
+    }
+    .code-badge.alt { background: var(--bg-panel); color: var(--text-muted); border-color: var(--border); font-weight: 500; }
+
+    /* ── EVIDENCE BULLETS ── */
+    .evidence-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .evidence-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 13px; color: var(--text-muted);
+      padding: 8px 12px;
+      background: var(--bg-panel);
+      border-radius: 8px;
+    }
+    .evidence-list li::before { content: '▸'; color: var(--accent2); flex-shrink: 0; margin-top: 1px; }
+
+    /* ── SHAP "WHY THIS PREDICTION" ── */
+    .shap-section { margin-top: 18px; }
+    .shap-section h4 {
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); margin: 0 0 8px;
+    }
+    .shap-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .shap-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; color: var(--text-muted);
+      padding: 6px 12px;
+      background: var(--bg-panel);
+      border-radius: 8px;
+    }
+    .shap-row .shap-name { flex: 1 1 auto; color: var(--text-main); }
+    .shap-row .shap-val { flex-shrink: 0; font-family: 'Space Grotesk', sans-serif; color: var(--text-muted); }
+    .shap-row .shap-bar-track {
+      flex-shrink: 0; width: 70px; height: 6px; border-radius: 3px;
+      background: rgba(255,255,255,0.08); overflow: hidden;
+    }
+    .shap-row .shap-bar-fill { height: 100%; border-radius: 3px; }
+    .shap-row.supports .shap-bar-fill { background: var(--accent3); }
+    .shap-row.opposes .shap-bar-fill { background: #e0607e; }
+    .shap-row.supports .shap-tag { color: var(--accent3); }
+    .shap-row.opposes .shap-tag { color: #e0607e; }
+    .shap-row .shap-tag { flex-shrink: 0; font-size: 11px; width: 60px; text-align: right; }
+
+    /* ── PROBABILITY BAR CHART ── */
+    .prob-bars { display: flex; flex-direction: column; gap: 10px; }
+    .prob-row {
+      display: grid;
+      grid-template-columns: 160px 1fr 52px;
+      align-items: center; gap: 12px;
+    }
+    .prob-label {
+      font-size: 12px; color: var(--text-muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .prob-track { background: var(--bg-deep); border-radius: 4px; height: 8px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    .prob-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-main); text-align: right; }
+
+    /* ── FEATURES TABLE ── */
+    .feat-table { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 600px) { .feat-table { grid-template-columns: 1fr; } }
+    .feat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-panel);
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 12px;
+    }
+    .feat-key { color: var(--text-muted); }
+    .feat-val { font-family: 'JetBrains Mono', monospace; color: var(--text-main); font-weight: 500; }
+    .feat-row.key-feature {
+      background: rgba(123,94,167,0.15);
+      border: 1px solid rgba(123,94,167,0.35);
+    }
+    .feat-row.key-feature .feat-key { color: var(--text-main); font-weight: 600; }
+    .feat-row.key-feature .feat-key::after { content: ' \2605'; color: #b9a4e0; }
+
+    /* ── RULE TRACE TABLE ── */
+    .rule-table { display: flex; flex-direction: column; gap: 8px; }
+    .rule-row {
+      display: grid;
+      grid-template-columns: 170px 1fr 90px 80px;
+      gap: 12px; align-items: center;
+      background: var(--bg-panel);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px;
+      border-left: 3px solid transparent;
+    }
+    .rule-row.fired { border-left-color: var(--accent4); background: rgba(245,166,35,0.07); }
+    .rule-row.header {
+      background: transparent; border: none;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 1px; font-size: 10px; font-weight: 700;
+      padding: 0 14px;
+    }
+    .rule-name { font-weight: 600; }
+    .rule-detail { color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .rule-detail .rule-desc { display: block; color: var(--text-muted); font-family: 'Space Grotesk', sans-serif; font-size: 11px; margin-top: 2px; opacity: 0.75; }
+    .rule-score { font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .rule-status {
+      text-align: center; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.5px; padding: 3px 8px; border-radius: 6px;
+    }
+    .rule-status.fired { background: rgba(245,166,35,0.18); color: var(--accent4); }
+    .rule-status.idle { background: rgba(136,145,181,0.12); color: var(--text-muted); }
+
+    @media (max-width: 700px) {
+      .rule-row { grid-template-columns: 1fr; }
+      .rule-row.header { display: none; }
+      .rule-status { text-align: left; }
+    }
+
+    /* ── VALIDATION PANEL ── */
+    .validation-box {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-panel);
+      border-radius: 10px; padding: 16px 20px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .validation-badge {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 6px 14px; border-radius: 20px;
+    }
+    .validation-badge.agree { background: rgba(52,201,139,0.15); border: 1px solid rgba(52,201,139,0.4); color: var(--accent3); }
+    .validation-badge.disagree { background: rgba(232,64,42,0.15); border: 1px solid rgba(232,64,42,0.4); color: var(--accent1); }
+    .validation-badge.partial { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); color: var(--accent4); }
+    .validation-text { font-size: 13px; color: var(--text-muted); line-height: 1.6; flex: 1; min-width: 220px; }
+    .validation-text strong { color: var(--text-main); }
+
+    /* ── ERROR ── */
+    .error-box {
+      background: rgba(232,64,42,0.12);
+      border: 1px solid rgba(232,64,42,0.35);
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 14px; color: var(--accent1);
+      display: none;
+      grid-column: 1 / -1;
+    }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 4px; background: var(--bg-deep); border-radius: 10px; padding: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1; min-width: 110px; padding: 8px 14px;
+      background: transparent; border: none;
+      color: var(--text-muted); font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; border-radius: 7px;
+      text-transform: uppercase; letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { background: var(--bg-panel); color: var(--text-main); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 5;
+      border-top: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+    footer p { font-size: 12px; color: var(--text-muted); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: fadeIn 0.45s ease both; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">v2 · Recalibrated Secondary-Cause Model</div>
+  <h2>Diagnose <span>why</span> the balloon really burst.</h2>
+  <p>Upload a BUFR radiosonde file. The pipeline checks the WMO 30 hPa ceiling, then a RandomForest
+     classifier trained on the recalibrated <code>secondary</code> cause taxonomy
+     (Strong Shear, RH Freeze-out, Cold Point Tropopause, Pressure Reversal, Slow Ascent,
+     Cloud/Rain Layer, Deep Convection) predicts the most likely cause — alongside a
+     transparent percentile-rank rule trace for analysis.</p>
+  <a class="nav-link" href="/">&larr; back to v1 (primary cause classifier)</a>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- UPLOAD CARD -->
+  <div class="card">
+    <div class="card-label">Step 1 — Input</div>
+    <h3>Upload BUFR File</h3>
+    <div style="margin-top:16px;">
+      <div class="upload-zone" id="dropZone">
+        <div class="upload-icon">📡</div>
+        <h4>Drop your BUFR file here</h4>
+        <p>Supports standard WMO radiosonde BUFR format<br>(.bin, .bufr, or any binary BUFR)</p>
+        <input type="file" id="fileInput" accept=".bin,.bufr,.bfr,*">
+        <div id="fileSelectedInfo" class="file-selected" style="display:none;">
+          <span>📄</span>
+          <span id="fileNameDisplay"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Model Directory Path</label>
+        <input type="text" id="modelDir" value="draft/models_v2" placeholder="e.g. draft/models_v2" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="runBtn" disabled onclick="runClassifier()">
+          ▶ Run v2 Classifier
+        </button>
+        <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS CARD -->
+  <div class="card">
+    <div class="card-label">How It Works</div>
+    <h3>Pipeline + Rule-Trace Overlay</h3>
+    <div style="margin-top:18px;" class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-info">
+          <h5>Parse BUFR</h5>
+          <p>Decode binary radiosonde data into a pressure-level DataFrame using eccodes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-info">
+          <h5>Clean Profile</h5>
+          <p>Remove sentinel values (−9999, 2e20) and sort levels surface → top.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-info">
+          <h5>Burst Detection</h5>
+          <p>Apply WMO 30 hPa ceiling threshold to classify as premature or nominal.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-info">
+          <h5>Feature Engineering</h5>
+          <p>Compute shear, Richardson number, icing/moisture indices, ascent-rate stats and tropopause stats — same 27 features used to train the v2 model.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-info">
+          <h5>Load Saved v2 Model</h5>
+          <p>Load the pre-trained RandomForest, scaler, label encoder and CALIB percentile table from <code>draft/models_v2/</code> — no retraining at inference time.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-info">
+          <h5>Predict, Trace &amp; Validate</h5>
+          <p>Scale features, run ML inference, and separately replay the percentile-rank labelling rules (RH, shear, ascent rate, etc.) for a transparent side-by-side comparison.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="card" id="loadingSection">
+    <div class="card-label">Processing</div>
+    <h3>Running Pipeline…</h3>
+    <div style="margin-top:20px;" class="progress-steps" id="progressSteps">
+      <div class="progress-step" data-step="1"><span class="step-icon">📂</span> Parsing BUFR file…</div>
+      <div class="progress-step" data-step="2"><span class="step-icon">🧹</span> Cleaning profile data…</div>
+      <div class="progress-step" data-step="3"><span class="step-icon">📏</span> Checking 30 hPa threshold…</div>
+      <div class="progress-step" data-step="4"><span class="step-icon">⚙️</span> Engineering atmospheric features…</div>
+      <div class="progress-step" data-step="5"><span class="step-icon">🤖</span> Loading saved v2 model &amp; CALIB…</div>
+      <div class="progress-step" data-step="6"><span class="step-icon">✨</span> Running classifier &amp; rule trace…</div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- RESULTS -->
+  <div class="card full-width animate-in" id="resultsSection">
+    <div class="card-label">Classification Result — v2</div>
+
+    <div class="result-header">
+      <div>
+        <div id="verdictBadge" class="verdict-badge"></div>
+        <div class="cause-name" id="causeName" style="margin-top:14px;"></div>
+        <div class="code-badges" id="codeBadges"></div>
+      </div>
+      <div class="confidence-ring" id="confRing">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="#162252" stroke-width="8"/>
+          <circle id="confArc" cx="45" cy="45" r="38" fill="none"
+                  stroke="#7b5ea7" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="239" stroke-dashoffset="239"
+                  style="transition: stroke-dashoffset 1s ease;"/>
+        </svg>
+        <div class="ring-text">
+          <span id="confPct">0%</span>
+          <span class="ring-label">Confidence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIGHT STATS -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'descTab')">📋 Description</button>
+      <button class="tab-btn" onclick="switchTab(this,'evidTab')">🔍 Evidence</button>
+      <button class="tab-btn" onclick="switchTab(this,'probTab')">📊 Probabilities</button>
+      <button class="tab-btn" onclick="switchTab(this,'featTab')">🔬 Features</button>
+      <button class="tab-btn" onclick="switchTab(this,'validTab')">✅ Validation</button>
+      <button class="tab-btn" onclick="switchTab(this,'ruleTab')">🧪 Rule Trace</button>
+    </div>
+
+    <!-- Description -->
+    <div class="tab-panel active" id="descTab">
+      <div class="cause-desc" id="causeDesc"></div>
+    </div>
+
+    <!-- Evidence -->
+    <div class="tab-panel" id="evidTab">
+      <ul class="evidence-list" id="evidList"></ul>
+      <div class="shap-section" id="shapSection" style="display:none;">
+        <h4>Why this prediction (model reasoning)</h4>
+        <ul class="shap-list" id="shapList"></ul>
+      </div>
+    </div>
+
+    <!-- Probabilities -->
+    <div class="tab-panel" id="probTab">
+      <div class="prob-bars" id="probBars"></div>
+    </div>
+
+    <!-- Features -->
+    <div class="tab-panel" id="featTab">
+      <div class="feat-table" id="featTable"></div>
+    </div>
+
+    <!-- Validation -->
+    <div class="tab-panel" id="validTab">
+      <div id="validationBox"></div>
+    </div>
+
+    <!-- Rule Trace -->
+    <div class="tab-panel" id="ruleTab">
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+        Each row replays one rule from <code>classify_secondary_multi()</code> against this flight's raw signals,
+        using the percentile-rank distributions frozen from the training set (<code>CALIB</code>).
+        This is an analysis overlay only — it does <strong>not</strong> feed back into the ML prediction above.
+      </p>
+      <div class="rule-table" id="ruleTable"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <p>BurstSense v2 — Secondary Burst Cause Classifier · <code>draft/secondary_classifier.py</code> + <code>draft/models_v2/</code></p>
+  <p style="font-family:'JetBrains Mono',monospace;font-size:11px;">no retraining at inference — model loaded from disk</p>
+</footer>
+
+<script>
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const dropZone    = document.getElementById('dropZone');
+const fileInput   = document.getElementById('fileInput');
+const fileSelInfo = document.getElementById('fileSelectedInfo');
+const fileNameEl  = document.getElementById('fileNameDisplay');
+const runBtn      = document.getElementById('runBtn');
+
+let selectedFile = null;
+
+// ─── FEATURE / SIGNAL LABELS (friendly names for raw variable names) ─────────
+const FEATURE_LABELS = {
+  burst_temp:               'Burst Temperature',
+  dewdep_burst:             'Dewpoint Depression at Burst',
+  min_dewdep_warm:          'Min Dewpoint Depression (warm levels)',
+  n_high_rh:                'High-Humidity Level Count',
+  ascent_drop:              'Ascent Rate Drop',
+  dir_delta:                'Wind Direction Change (near burst)',
+  spd_max:                  'Max Wind Speed (near burst)',
+  spd_rank:                 'Wind Speed Percentile',
+  dir_rank:                 'Direction Change Percentile',
+  rh_rank:                  'Humidity Percentile',
+  drop_rank:                'Ascent Drop Percentile',
+  cape_jkg:                 'CAPE',
+  cin_jkg:                  'CIN',
+  cape_rank:                'CAPE Percentile',
+  med_ascent:               'Median Ascent Rate',
+  med_rank:                 'Ascent Rate Percentile',
+  cpt_dist:                 'Distance to Cold-Point Tropopause',
+  cpt_rank:                 'Cold-Point Distance Percentile',
+  pressure_increase_total:  'Pressure Increase Near Termination',
+  pr_rank:                  'Pressure Increase Percentile',
+  gps_frozen:               'GPS Frozen',
+  max_shear:                'Max Wind Shear',
+  max_wind_speed_mps:       'Max Wind Speed (whole profile)',
+  lcl_agl_m:                'Lifted Condensation Level (AGL)',
+  moist_dd_mean:            'Mean Dewpoint Depression',
+  pw_proxy:                 'Precipitable Water Proxy',
+  moist_depth_m:            'Moist Layer Depth',
+  moist_index:              'Moisture Loading Index',
+  temp_at_burst_C:          'Temperature at Burst',
+  ascent_rate_mean:         'Mean Ascent Rate',
+  time_to_burst_mins:       'Time to Burst',
+  tropopause_temp_C:        'Tropopause Temperature',
+  burst_pres_hpa:           'Burst Pressure',
+  burst_alt_m:              'Burst Altitude',
+  shear_alt_m:              'Altitude of Max Shear',
+  shear_to_burst_m:         'Max Shear Distance to Burst',
+  bulk_shear_lower:         'Bulk Shear (lower layer)',
+  bulk_shear_upper:         'Bulk Shear (upper layer)',
+  ascent_rate_std:          'Ascent Rate Variability',
+  ascent_rate_var_burst:    'Ascent Rate Variance Near Burst',
+  ascent_rate_max_spike:    'Largest Ascent Rate Spike',
+  n_turbulent_spikes:       'Turbulent Spike Count',
+  boundary_layer_shear:     'Boundary-Layer Shear',
+  min_richardson:           'Minimum Richardson Number',
+  ri_alt_m:                 'Altitude of Minimum Richardson Number',
+  n_unstable_layers:        'Unstable Layer Count',
+  icing_depth_m:            'Icing Layer Depth',
+  icing_index:              'Icing Index',
+  tropopause_alt_m:         'Tropopause Altitude',
+  peak_ascent:              'Peak Ascent Rate',
+};
+
+// Replace any raw variable-name tokens in a string with friendly labels.
+function friendlyText(str) {
+  if (str === null || str === undefined) return str;
+  let s = String(str);
+  for (const key of Object.keys(FEATURE_LABELS).sort((a, b) => b.length - a.length)) {
+    s = s.replace(new RegExp(`\\b${key}\\b`, 'g'), FEATURE_LABELS[key]);
+  }
+  return s;
+}
+
+function friendlyLabel(key) {
+  return FEATURE_LABELS[key] || key.replace(/_/g, ' ');
+}
+
+// ─── CAUSE DATA (secondary-cause taxonomy) ───────────────────────────────────
+const CAUSE_DATA = {
+  'RH Freeze-out': {
+    description: "Burst occurred at a very cold temperature with low dewpoint depression — moisture on the balloon membrane likely froze out rapidly near burst, embrittling the latex and causing failure.",
+    color: '#4a9eff', icon: '❄️'
+  },
+  'RH Saturation': {
+    description: "The flight spent much of its ascent in near-saturated air (small dewpoint depression throughout). Persistent moisture loading and icing on the membrane is the likely stressor.",
+    color: '#34c98b', icon: '💧'
+  },
+  'Cloud/Rain Layer': {
+    description: "A deep, near-saturated moist layer was crossed during ascent, coinciding with a drop in ascent rate. The balloon likely picked up liquid water / ice mass passing through a cloud or rain layer, adding weight and aerodynamic drag until it failed.",
+    color: '#4a9eff', icon: '☁️'
+  },
+  'Strong Shear': {
+    description: "Wind speed or directional shear was unusually high for this flight. Strong mechanical stress from rapid changes in wind speed across a layer likely tore or deformed the balloon.",
+    color: '#e8402a', icon: '💨'
+  },
+  'Directional Shear': {
+    description: "A large change in wind direction occurred without a corresponding increase in wind speed. The balloon was twisted or sheared directionally, stressing the membrane and payload train.",
+    color: '#f5a623', icon: '🧭'
+  },
+  'Deep Convection': {
+    description: "An extreme spike in ascent rate was detected near burst, consistent with the balloon being caught in a strong convective updraft. The rapid acceleration overstressed the membrane.",
+    color: '#e8402a', icon: '🌪'
+  },
+  'Slow Ascent': {
+    description: "The flight's ascent rate was unusually slow for most of its duration (likely under-inflation). Prolonged exposure time increased solar heating / cooling cycles and UV degradation of the membrane before it eventually failed.",
+    color: '#f5a623', icon: '🐢'
+  },
+  'Cold Point Tropopause': {
+    description: "Burst occurred close to the cold-point tropopause altitude. The extreme low temperatures and structural transition near the tropopause are the likely cause of membrane failure.",
+    color: '#7b5ea7', icon: '🥶'
+  },
+  'Pressure Reversal': {
+    description: "The pressure record shows the balloon descending or oscillating before termination, rather than a clean monotonic ascent to burst. This points to a partial failure (slow leak, tangled train) followed by descent rather than a single sharp burst.",
+    color: '#f5a623', icon: '🔄'
+  },
+  'GPS Fail': {
+    description: "Latitude/longitude telemetry froze or went missing near the end of the flight. This points to a GPS / telemetry hardware fault rather than a purely atmospheric burst cause.",
+    color: '#8891b5', icon: '📡'
+  },
+  'Unknown': {
+    description: "The flight is premature, but its feature profile does not match any of the known secondary-cause patterns with confidence. Manual review of the sounding is recommended.",
+    color: '#8891b5', icon: '❓'
+  },
+  'nominal': {
+    description: "The balloon reached or exceeded the 30 hPa target ceiling. This is a successful flight — no premature burst detected.",
+    color: '#34c98b', icon: '✅'
+  }
+};
+
+// ─── FILE DRAG & DROP ─────────────────────────────────────────────────────────
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault(); dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  fileNameEl.textContent = file.name + '  (' + (file.size / 1024).toFixed(1) + ' KB)';
+  fileSelInfo.style.display = 'flex';
+  runBtn.disabled = false;
+}
+
+// ─── RUN CLASSIFIER ──────────────────────────────────────────────────────────
+async function runClassifier() {
+  if (!selectedFile) return;
+
+  runBtn.disabled = true;
+  document.getElementById('loadingSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+
+  const steps = document.querySelectorAll('.progress-step');
+  steps.forEach(s => { s.classList.remove('active', 'done'); });
+
+  for (let i = 0; i < steps.length; i++) {
+    steps[i].classList.add('active');
+    const spinnerEl = document.createElement('div');
+    spinnerEl.className = 'spinner';
+    steps[i].prepend(spinnerEl);
+
+    await delay(420 + Math.random() * 380);
+
+    spinnerEl.remove();
+    steps[i].classList.remove('active');
+    steps[i].classList.add('done');
+    steps[i].querySelector('.step-icon').textContent = '✓';
+  }
+
+  await delay(300);
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('model_dir', document.getElementById('modelDir').value);
+
+  let result;
+  try {
+    const response = await fetch('/analyze_v2', { method: 'POST', body: formData });
+    result = await response.json();
+  } catch (err) {
+    result = { error: String(err) };
+  }
+
+  document.getElementById('loadingSection').style.display = 'none';
+
+  if (result.error) {
+    const box = document.getElementById('errorBox');
+    box.style.display = 'block';
+    box.textContent = '⚠️ ' + result.error;
+    runBtn.disabled = false;
+    return;
+  }
+
+  displayResult(result);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── DISPLAY RESULT ──────────────────────────────────────────────────────────
+function displayResult(result) {
+  const el = document.getElementById('resultsSection');
+  el.style.display = 'block';
+
+  const cause = result.predicted_cause;
+  const cd = CAUSE_DATA[cause] || CAUSE_DATA['Unknown'];
+
+  // Verdict badge
+  const badge = document.getElementById('verdictBadge');
+  badge.className = 'verdict-badge ' + (result.is_premature ? 'verdict-premature' : 'verdict-nominal');
+  badge.innerHTML = (result.is_premature ? '⚠️ Premature Burst' : '✅ Nominal Flight');
+
+  // Cause name
+  document.getElementById('causeName').innerHTML = `${cd.icon} ${cause}`;
+
+  // Label codes (secondary code + combined code from Label_End_of_radiosonde.xlsx)
+  const codeBadgesEl = document.getElementById('codeBadges');
+  const candidates = result.combined_code_candidates || [];
+  let codeHtml = '';
+  if (result.secondary_code) {
+    codeHtml += `<span class="code-badge">Secondary: ${result.secondary_code}</span>`;
+  }
+  candidates.forEach((c, i) => {
+    codeHtml += `<span class="code-badge${i === 0 ? '' : ' alt'}">${c.code} (${c.share_pct}%)</span>`;
+  });
+  codeBadgesEl.innerHTML = codeHtml;
+  codeBadgesEl.title = candidates.length > 1
+    ? 'Multiple combined codes are possible for this secondary cause depending on the flight\'s actual termination reason (Balloon Burst / Ascent Stop / etc.), which isn\'t derivable from the sounding profile. Percentages reflect training-set frequency.'
+    : '';
+
+  // Confidence ring
+  const pct = result.confidence_pct;
+  document.getElementById('confPct').textContent = pct.toFixed(0) + '%';
+  const arc = document.getElementById('confArc');
+  arc.setAttribute('stroke', cd.color);
+  setTimeout(() => {
+    arc.style.strokeDashoffset = 239 - (239 * pct / 100);
+  }, 100);
+
+  // Stats grid
+  const statsEl = document.getElementById('statsGrid');
+  const stats = [
+    { val: result.burst_pres_hpa, unit: 'hPa', lbl: 'Burst Pressure' },
+    { val: result.burst_alt_m ? (result.burst_alt_m/1000).toFixed(1) : '—', unit: 'km', lbl: 'Burst Altitude' },
+    { val: result.n_levels, unit: '', lbl: 'Sounding Levels' },
+    { val: result.station_id || '—', unit: '', lbl: 'Station ID' },
+  ];
+  statsEl.innerHTML = stats.map(s =>
+    `<div class="stat-box">
+      <div class="stat-val">${s.val}<span class="stat-unit">${s.unit}</span></div>
+      <div class="stat-lbl">${s.lbl}</div>
+    </div>`
+  ).join('');
+
+  // Cause description
+  let descHtml = `<p>${cd.description}</p>`;
+  if (!result.is_premature) {
+    descHtml += `<p style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+      <strong>Note:</strong> this flight reached the 30 hPa nominal ceiling — it did
+      <strong>not</strong> burst prematurely. The model is trained only on premature
+      flights, so this prediction reflects which failure-pattern the flight's
+      end-of-flight profile most closely <em>resembles</em>, not an actual cause of failure.
+    </p>`;
+  }
+  document.getElementById('causeDesc').innerHTML = descHtml;
+
+  // Evidence (from features)
+  const evidList = document.getElementById('evidList');
+  const ev = buildEvidence(cause, result.features_used || {}, result);
+  evidList.innerHTML = ev.map(e => `<li>${e}</li>`).join('');
+
+  // SHAP "why this prediction" evidence
+  const shapSection = document.getElementById('shapSection');
+  const shapList = document.getElementById('shapList');
+  const shapEvidence = result.shap_evidence || [];
+  if (shapEvidence.length) {
+    const maxAbs = Math.max(...shapEvidence.map(e => Math.abs(e.shap_value)), 1e-9);
+    shapList.innerHTML = shapEvidence.map(e => {
+      const pct = Math.round((Math.abs(e.shap_value) / maxAbs) * 100);
+      const dirClass = e.direction === 'supports' ? 'supports' : 'opposes';
+      const tag = e.direction === 'supports' ? 'supports' : 'opposes';
+      return `
+        <li class="shap-row ${dirClass}">
+          <span class="shap-name">${friendlyLabel(e.feature)}</span>
+          <span class="shap-val">${e.value}</span>
+          <span class="shap-bar-track"><span class="shap-bar-fill" style="width:${pct}%"></span></span>
+          <span class="shap-tag">${tag}</span>
+        </li>`;
+    }).join('');
+    shapSection.style.display = '';
+  } else {
+    shapSection.style.display = 'none';
+  }
+
+  // Probability bars
+  const probEl = document.getElementById('probBars');
+  const sorted = Object.entries(result.all_probabilities || {}).sort((a,b) => b[1] - a[1]);
+  const colors = ['#7b5ea7','#4a9eff','#34c98b','#e8402a','#f5a623','#ff6b6b','#8891b5','#34c98b','#4a9eff','#f5a623'];
+  probEl.innerHTML = sorted.map(([c, p], i) =>
+    `<div class="prob-row">
+      <div class="prob-label">${c}</div>
+      <div class="prob-track">
+        <div class="prob-fill" style="width:0%;background:${colors[i%colors.length]}" data-w="${p}"></div>
+      </div>
+      <div class="prob-pct">${p.toFixed(1)}%</div>
+    </div>`
+  ).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.prob-fill').forEach(b => { b.style.width = b.dataset.w + '%'; });
+  }, 100);
+
+  // Rule trace
+  renderRuleTrace(result.rule_trace || []);
+
+  // Validation
+  renderValidation(result, result.rule_trace || []);
+
+  // Features table — highlight the features that define this classification
+  const featEl = document.getElementById('featTable');
+  const feats = result.features_used || {};
+  const keyFeatures = new Set(result.key_features || []);
+  featEl.innerHTML = Object.entries(feats).map(([k, v]) => {
+    const vStr = typeof v === 'number'
+      ? (Math.abs(v) > 999 ? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toFixed(3))
+      : String(v);
+    const cls = 'feat-row' + (keyFeatures.has(k) ? ' key-feature' : '');
+    return `<div class="${cls}">
+      <span class="feat-key">${friendlyLabel(k)}</span>
+      <span class="feat-val">${vStr}</span>
+    </div>`;
+  }).join('');
+
+  switchTab(document.querySelector('.tab-btn'), 'descTab');
+  runBtn.disabled = false;
+}
+
+// ─── BUILD EVIDENCE LIST ─────────────────────────────────────────────────────
+function buildEvidence(cause, f, result) {
+  const ev = [];
+
+  if (result.burst_pres_hpa) ev.push(`Burst pressure: <strong>${result.burst_pres_hpa} hPa</strong> (WMO ceiling: 30 hPa)`);
+  if (result.burst_alt_m) ev.push(`Burst altitude: <strong>${(result.burst_alt_m/1000).toFixed(1)} km</strong>`);
+
+  const checks = {
+    'RH Freeze-out': [
+      [f.temp_at_burst_C < -40, `Burst temperature was extremely cold (${f.temp_at_burst_C?.toFixed(1)}°C)`],
+      [f.moist_dd_mean < 3, `Dewpoint depression near burst was small (${f.moist_dd_mean?.toFixed(1)}°C) — near-saturated`],
+    ],
+    'RH Saturation': [
+      [f.moist_dd_mean < 3, `Dewpoint depression averaged only ${f.moist_dd_mean?.toFixed(1)}°C — near-saturated column`],
+      [f.pw_proxy > 3e5, `Column moisture proxy was high (${f.pw_proxy?.toLocaleString()})`],
+    ],
+    'Cloud/Rain Layer': [
+      [f.moist_depth_m > 1000, `A moist/cloud layer ${f.moist_depth_m?.toFixed(0)} m deep was crossed`],
+      [f.moist_index > 3e4, `Moisture loading index was elevated (${f.moist_index?.toFixed(0)})`],
+    ],
+    'Strong Shear': [
+      [f.max_shear > 7.5, `Maximum wind shear was high (${f.max_shear?.toFixed(3)} m/s per 100 m, top quartile)`],
+      [f.max_wind_speed_mps > 20, `Maximum wind speed was high (${f.max_wind_speed_mps?.toFixed(1)} m/s)`],
+    ],
+    'Directional Shear': [
+      [f.max_wind_speed_mps < 15, `Wind speed stayed moderate (${f.max_wind_speed_mps?.toFixed(1)} m/s) despite the shear event`],
+      [f.max_shear > 6.0, `Wind shear was elevated (${f.max_shear?.toFixed(3)} m/s per 100 m, above median)`],
+    ],
+    'Deep Convection': [
+      [f.cape_jkg > 1000, `Surface-based CAPE was ${f.cape_jkg?.toFixed(0)} J/kg — moderate-to-strong convective potential`],
+      [f.lcl_agl_m < 600, `Lifted condensation level was low (${f.lcl_agl_m?.toFixed(0)} m AGL) — easy cloud formation`],
+    ],
+    'Slow Ascent': [
+      [f.ascent_rate_mean < 3, `Mean ascent rate was slow (${f.ascent_rate_mean?.toFixed(2)} m/s)`],
+      [f.time_to_burst_mins > 100, `Flight duration before burst was long (${f.time_to_burst_mins?.toFixed(0)} min)`],
+    ],
+    'Cold Point Tropopause': [
+      [f.cpt_dist < 500, `Burst occurred close to the cold-point tropopause altitude (${f.cpt_dist?.toFixed(0)} m away)`],
+      [f.tropopause_temp_C < -75, `Tropopause temperature was extremely cold (${f.tropopause_temp_C?.toFixed(1)}°C)`],
+    ],
+  };
+
+  const relevant = checks[cause] || [];
+  relevant.forEach(([cond, msg]) => { if (cond) ev.push(msg); });
+
+  if (relevant.length && ev.filter((_,i) => i >= (result.burst_pres_hpa?1:0)+(result.burst_alt_m?1:0)).length === 0) {
+    ev.push('Pattern matched cluster profile from training data (individual thresholds within range but overall combination matches this cause).');
+  }
+
+  return ev;
+}
+
+// ─── RULE TRACE ──────────────────────────────────────────────────────────────
+function renderRuleTrace(trace) {
+  const el = document.getElementById('ruleTable');
+  if (!trace.length) {
+    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Rule trace unavailable — draft/models_v2/calib.joblib not found.</p>';
+    return;
+  }
+
+  const header = `
+    <div class="rule-row header">
+      <div>Rule</div>
+      <div>Signal / Value</div>
+      <div>Score</div>
+      <div>Status</div>
+    </div>`;
+
+  const rows = trace.map(r => {
+    return `
+    <div class="rule-row ${r.triggered ? 'fired' : ''}">
+      <div class="rule-name">${r.rule}</div>
+      <div class="rule-detail">
+        ${friendlyText(r.signal)} = ${friendlyText(r.value)}
+        <span class="rule-desc">${friendlyText(r.rule_desc)}</span>
+      </div>
+      <div class="rule-score">${r.score.toFixed(2)}</div>
+      <div class="rule-status ${r.triggered ? 'fired' : 'idle'}">${r.triggered ? 'Triggered' : 'Idle'}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + rows;
+}
+
+// ─── VALIDATION ──────────────────────────────────────────────────────────────
+function renderValidation(result, trace) {
+  const el = document.getElementById('validationBox');
+
+  let prefix = '';
+  if (!result.is_premature) {
+    prefix = `
+      <div class="validation-box">
+        <div class="validation-badge partial">Nominal Flight</div>
+        <div class="validation-text">This flight reached the 30 hPa WMO ceiling — it did not burst prematurely.
+          The cross-check below is shown for analysis only; the model and rule engine were both designed
+          around premature-burst signatures.</div>
+      </div>`;
+  }
+
+  if (!trace.length) {
+    el.innerHTML = prefix + `<div class="validation-box">
+      <div class="validation-badge partial">No Trace</div>
+      <div class="validation-text">Rule trace unavailable, so the ML prediction cannot be cross-checked against the labelling rules.</div>
+    </div>`;
+    return;
+  }
+
+  const fired = trace.filter(r => r.triggered).sort((a,b) => b.score - a.score);
+  const mlCause = result.predicted_cause;
+  const firedNames = fired.map(r => r.rule);
+
+  let badgeClass, badgeText, msg;
+  if (firedNames.includes(mlCause)) {
+    badgeClass = 'agree'; badgeText = 'Agrees';
+    msg = `The ML model's top prediction (<strong>${mlCause}</strong>) is also one of the rules
+           that fired on this flight's raw signals — independent corroboration.`;
+  } else if (fired.length === 0) {
+    badgeClass = 'partial'; badgeText = 'No Rules Fired';
+    msg = `The ML model predicts <strong>${mlCause}</strong> (${result.confidence_pct.toFixed(1)}%),
+           but none of the percentile-rank rules triggered for this flight — the flight may be
+           an edge case not well represented by the rule thresholds.`;
+  } else {
+    badgeClass = 'disagree'; badgeText = 'Differs';
+    msg = `The ML model predicts <strong>${mlCause}</strong> (${result.confidence_pct.toFixed(1)}%),
+           while the rule engine's top trigger${fired.length > 1 ? 's are' : ' is'}
+           <strong>${firedNames.join(', ')}</strong>. This doesn't mean either is wrong —
+           the ML model uses the full feature vector while the rules check individual signals.`;
+    if (result.confidence_pct < 40) {
+      msg += ` <br><br><strong>Note:</strong> ML confidence is low (${result.confidence_pct.toFixed(1)}%) —
+             treat this prediction as tentative and weigh the rule trace and Probabilities tab equally.`;
+    }
+  }
+
+  el.innerHTML = prefix + `
+    <div class="validation-box">
+      <div class="validation-badge ${badgeClass}">${badgeText}</div>
+      <div class="validation-text">${msg}</div>
+    </div>
+    <div class="validation-text" style="margin-top:4px;">
+      <strong>Rules triggered (${fired.length}):</strong>
+      ${fired.length ? fired.map(r => `${r.rule} (${r.score.toFixed(2)})`).join(', ') : 'none'}
+    </div>`;
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(btn, panelId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ─── RESET ───────────────────────────────────────────────────────────────────
+function resetAll() {
+  selectedFile = null;
+  fileInput.value = '';
+  fileSelInfo.style.display = 'none';
+  runBtn.disabled = true;
+  document.getElementById('loadingSection').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.querySelectorAll('.progress-step').forEach(s => {
+    s.classList.remove('active', 'done');
+    s.querySelector('.step-icon').textContent = ['📂','🧹','📏','⚙️','🤖','✨'][
+      parseInt(s.dataset.step) - 1
+    ];
+  });
+}
+</script>
+</body>
+</html>

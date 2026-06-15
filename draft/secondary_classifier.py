@@ -1,25 +1,33 @@
 """
-bufr_burst_inference.py
-───────────────────────
-Full inference pipeline for a single radiosonde BUFR file.
+secondary_classifier.py
+────────────────────────
+Inference pipeline for the recalibrated secondary burst-cause taxonomy
+(combined_codes_train.csv / combined_codes_test.csv from classifier.ipynb,
+masked against Label_End_of_radiosonde.xlsx).
+
+This is a NEW, self-contained pipeline — it does not modify or import
+draft/final_classifier.py. BUFR parsing / cleaning / 30 hPa threshold logic
+is duplicated verbatim from final_classifier.py so this file can be deployed
+on its own; engineer_features / fill_missing_features are duplicated from
+draft/train_secondary_model.py so the feature vector matches the model
+artifacts in draft/models_v2/ exactly.
 
 Steps:
-  1. Parse BUFR file → pressure-level DataFrame
-  2. Check 30 hPa threshold → nominal or premature
-  3. Feature engineering (same as training)
-  4. Load saved model / scaler / label encoder
-  5. Predict cause + confidence
+  1. Parse BUFR file -> pressure-level DataFrame
+  2. Check 30 hPa threshold -> nominal or premature
+  3. Feature engineering (same as draft/train_secondary_model.py)
+  4. Load draft/models_v2/ model / scaler / label encoder
+  5. Predict secondary cause + confidence
   6. Print labelled output with explanation
 
 Usage:
-  python bufr_burst_inference.py --file data/A_IUSG51WION121200_C_WIIX_20251012120000.bin
-  python bufr_burst_inference.py --file data/myfile.bin --model_dir models/
-  python bufr_burst_inference.py --file data/myfile.bin --save_json output.json
+  uv run python draft/secondary_classifier.py --file data/myfile.bin
+  uv run python draft/secondary_classifier.py --file data/myfile.bin --model_dir draft/models_v2
+  uv run python draft/secondary_classifier.py --file data/myfile.bin --save_json output.json
 """
 
 import argparse
 import json
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -28,76 +36,86 @@ import eccodes
 import joblib
 import numpy as np
 import pandas as pd
+import shap
+
+from draft.rule_engine import build_rule_trace, compute_cape_cin
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 1. CONFIGURATION
 # ══════════════════════════════════════════════════════════════════════════════
 
-PREMATURE_THRESHOLD_HPA = 30   # WMO standard
+PREMATURE_THRESHOLD_HPA = 30  # WMO standard
 
 CAUSE_DESCRIPTIONS = {
-    'launch_failure': (
-        "The balloon burst very early with no atmospheric stressor present. "
-        "Burst pressure was extremely high (low altitude). Likely caused by "
-        "balloon damage before or at launch, under-inflation, or equipment defect. "
-        "Recommend checking ground handling logs for this flight."
+    'RH Freeze-out': (
+        "Burst occurred at a very cold temperature with low dewpoint "
+        "depression — moisture on the balloon membrane likely froze out "
+        "rapidly near burst, embrittling the latex and causing failure."
     ),
-    'deep_moisture_icing': (
-        "A deep supercooled liquid water layer was detected during ascent. "
-        "The icing layer extended over a significant altitude range with near-saturated "
-        "conditions (heavy precipitable water and moisture). Ice accumulation on the balloon membrane "
-        "over this extended layer caused progressive stress until burst."
+    'RH Saturation': (
+        "The flight spent much of its ascent in near-saturated air "
+        "(small dewpoint depression throughout). Persistent moisture "
+        "loading and icing on the membrane is the likely stressor."
     ),
-    'severe_icing': (
-        "A highly concentrated supercooled zone was detected. Although the icing layer "
-        "was thin event, the icing intensity was the highest "
-        "recorded — suggesting a dense supercooled cloud layer. Rapid ice accumulation "
-        "caused membrane failure."
+    'Cloud/Rain Layer': (
+        "A deep, near-saturated moist layer was crossed during ascent, "
+        "coinciding with a drop in ascent rate. The balloon likely picked "
+        "up liquid water / ice mass passing through a cloud or rain layer, "
+        "adding weight and aerodynamic drag until it failed."
     ),
-    'high_updraft': (
-        "Large ascent rate spikes were detected combined with unstable atmospheric layers"
-        "and high wind speeds. The balloon flew through turbulent air with strong updrafts and dynamic instability,"
-        " likely associated with deep convection. Mechanical stress from rapid acceleration "
-        "and deceleration caused premature burst."
+    'Strong Shear': (
+        "Wind speed or directional shear was unusually high for this "
+        "flight. Strong mechanical stress from rapid changes in wind "
+        "speed across a layer likely tore or deformed the balloon."
     ),
-    'atmospheric_instability': (
-        "Dynamic atmospheric instability was detected at high altitude near the "
-        "tropopause. Richardson number minimum was found in the upper troposphere, "
-        "combined with elevated shear. The balloon survived the lower atmosphere but was "
-        "stressed by wind shear (Clear Air Turbulence) near the jet stream or tropopause."
+    'Directional Shear': (
+        "A large change in wind direction occurred without a "
+        "corresponding increase in wind speed. The balloon was twisted "
+        "or sheared directionally, stressing the membrane and payload "
+        "train."
     ),
-    'dry_layer': (
-        "The atmosphere was anomalously dry (high dewpoint depression) with elevated "
-        "upper-level shear and unstable layers. This is consistent with clear-air "
-        "turbulence in dry conditions — unusual for Indonesia."
-        "Another possibility is that the balloon ascends through a very dry, cold layer, builds up friction, and popped by static electricity."
+    'Deep Convection': (
+        "An extreme spike in ascent rate was detected near burst, "
+        "consistent with the balloon being caught in a strong convective "
+        "updraft. The rapid acceleration overstressed the membrane."
     ),
-    'boundary_layer_shear': (
-        "Strong wind shear was detected in the lower layer with rapid changes "
-        "in wind speed or direction."
-        "The resulting mechanical stress and structural deformation of the latex membrane "
-        "caused it to tear well before reaching upper altitudes."
+    'Slow Ascent': (
+        "The flight's ascent rate was unusually slow for most of its "
+        "duration (likely under-inflation). Prolonged exposure time "
+        "increased solar heating / cooling cycles and UV degradation of "
+        "the membrane before it eventually failed."
     ),
-    'sensor_failure': (
-        "Cold point detected at such a low altitude "
-        "suggests a sensor failure or data error rather than a physical burst cause. "
-        "check the raw data and metadata for this flight for signs of sensor issues or data corruption."
+    'Cold Point Tropopause': (
+        "Burst occurred close to the cold-point tropopause altitude. "
+        "The extreme low temperatures and structural transition near the "
+        "tropopause are the likely cause of membrane failure."
+    ),
+    'Pressure Reversal': (
+        "The pressure record shows the balloon descending or oscillating "
+        "before termination, rather than a clean monotonic ascent to "
+        "burst. This points to a partial failure (slow leak, tangled "
+        "train) followed by descent rather than a single sharp burst."
+    ),
+    'GPS Fail': (
+        "Latitude/longitude telemetry froze or went missing near the end "
+        "of the flight. This points to a GPS / telemetry hardware fault "
+        "rather than a purely atmospheric burst cause."
+    ),
+    'Unknown': (
+        "The flight is premature, but its feature profile does not match "
+        "any of the known secondary-cause patterns with confidence. "
+        "Manual review of the sounding is recommended."
     ),
     'nominal': (
         "The balloon reached or exceeded the 30 hPa target ceiling. "
         "This is a successful flight — no premature burst detected."
     ),
-    'unknown_premature': (
-        "The flight shows premature burst but no single atmospheric cause "
-        "could be identified with confidence. The feature profile does not "
-        "match any known burst cause pattern clearly."
-    ),
 }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 2. BUFR PARSER  (from your existing code)
+# 2. BUFR PARSER (verbatim from draft/final_classifier.py)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
@@ -111,12 +129,8 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
         if msgid is None:
             return pd.DataFrame()
 
-        # Unpack BUFR
         eccodes.codes_set(msgid, 'unpack', 1)
 
-        # ==============================
-        # Profile variables
-        # ==============================
         profile_keys = {
             'pressure': 'pressure_Pa',
             'airTemperature': 'temp_K',
@@ -126,9 +140,6 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
             'nonCoordinateGeopotentialHeight': 'height_m',
         }
 
-        # ==============================
-        # Launch time
-        # ==============================
         launch_time = None
         try:
             year   = eccodes.codes_get(msgid, 'year')
@@ -140,9 +151,6 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
         except Exception:
             pass
 
-        # ==============================
-        # Extract profile arrays
-        # ==============================
         data = {}
         lengths = []
 
@@ -166,66 +174,34 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
             v = np.asarray(v, dtype=float)
 
             if len(v) < max_len:
-                print(f"[pad] {k}: {len(v)} → {max_len}")
                 v = np.pad(v, (0, max_len - len(v)), constant_values=np.nan)
-
             elif len(v) > max_len:
-                print(f"[trim] {k}: {len(v)} → {max_len}")
                 v = v[:max_len]
 
             clean_data[k] = v
 
-        # ==============================
-        # Station info (FIXED POSITION)
-        # ==============================
         station_id = None
-        station_name = None
 
-        block = None
-        station = None
-        wigos = None
-
-        # Try WIGOS first (best modern ID)
         try:
             wigos = eccodes.codes_get(msgid, 'wigosStationIdentifier')
             if wigos not in [None, '', 'missing']:
-                print(f"[station] wigos: {wigos}")
                 station_id = int(str(wigos).split('-')[-1])
-        except:
+        except Exception:
             pass
 
-        # Fallback: block + station number
         if station_id is None:
             try:
                 block = eccodes.codes_get(msgid, 'blockNumber')
                 station = eccodes.codes_get(msgid, 'stationNumber')
-
                 if block is not None and station is not None:
                     station_id = int(f"{int(block):02d}{int(station):03d}")
-                    print(f"[station] block+station: {block}+{station} → {station_id}")
-            except:
+            except Exception:
                 pass
 
-        # ==============================
-        # Release BUFR (AFTER all reads)
-        # ==============================
         eccodes.codes_release(msgid)
 
-        # ==============================
-        # Build DataFrame
-        # ==============================
         df = pd.DataFrame(clean_data)
 
-        print("\n=== HEAD ===")
-        print(df.head(10))
-
-        print("\n=== DATAFRAME INFO ===")
-        print("Columns:", df.columns.tolist())
-        print("Shape:", df.shape)
-
-        # ==============================
-        # Unit conversions
-        # ==============================
         if 'temp_K' in df.columns:
             df['temp_C'] = df['temp_K'] - 273.15
 
@@ -235,24 +211,18 @@ def extract_radiosonde_data(file_path: str) -> pd.DataFrame:
         if 'pressure_Pa' in df.columns:
             df['pressure_hPa'] = df['pressure_Pa'] / 100.0
 
-        # ==============================
-        # Metadata columns
-        # ==============================
         df['launch_time'] = launch_time
         df['station_id'] = station_id
         df['source_file'] = Path(file_path).name
 
         return df
 
+
 # ══════════════════════════════════════════════════════════════════════════════
-# 3. PREMATURE BURST DETECTION
+# 3. PREMATURE BURST DETECTION (verbatim from draft/final_classifier.py)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def detect_premature_burst(df: pd.DataFrame) -> dict:
-    """
-    Apply the 30 hPa WMO threshold.
-    Returns a dict with burst info and is_premature flag.
-    """
     df['pressure_hPa'] = pd.to_numeric(df['pressure_hPa'], errors='coerce')
     df['pressure_hPa'] = df['pressure_hPa'].replace(
         [-9999, -999, 9999, 99999, 2e20], np.nan
@@ -281,13 +251,10 @@ def detect_premature_burst(df: pd.DataFrame) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 4. DATA CLEANING
+# 4. DATA CLEANING (verbatim from draft/final_classifier.py)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def clean_profile(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean sentinel values and sort surface → top.
-    """
     MISSING = [-9999, -999, 9999, 99999, 2e20, 1e20]
 
     num_cols = ['temp_C', 'dewpoint_C', 'wind_speed_mps',
@@ -297,28 +264,21 @@ def clean_profile(df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
             df[col] = df[col].replace(MISSING, np.nan)
-            # eccodes fills missing with 1e36 — catch that too
             df.loc[df[col].abs() > 1e10, col] = np.nan
 
-    # Add ascent_rate_mps if not present (compute from height)
     if 'ascent_rate_mps' not in df.columns:
         df = df.sort_values('pressure_hPa', ascending=False).reset_index(drop=True)
-        df['ascent_rate_mps'] = df['height_m'].diff().abs() / 1.0  # assume ~1s per level
-        # This is approximate — if time column exists use that instead
+        df['ascent_rate_mps'] = df['height_m'].diff().abs() / 1.0
 
     df = df.sort_values('pressure_hPa', ascending=False).reset_index(drop=True)
     return df
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 5. FEATURE ENGINEERING  (identical to training)
+# 5. FEATURE ENGINEERING (identical to draft/train_secondary_model.py)
 # ══════════════════════════════════════════════════════════════════════════════
 
 def engineer_features(flight_df: pd.DataFrame) -> dict | None:
-    """
-    Collapse the full vertical profile into one feature vector.
-    Must be identical to the function used during training.
-    """
     f = flight_df.copy()
 
     if len(f) < 3:
@@ -329,35 +289,29 @@ def engineer_features(flight_df: pd.DataFrame) -> dict | None:
     f['dtemp'] = f['temp_C'].diff()
     dz_safe    = f['dz'].replace(0, np.nan)
 
-    # Wind shear (m/s per 100m)
     f['shear'] = np.where(f['dz'] > 10, f['dspd'] / dz_safe * 100, np.nan)
 
-    # Richardson number
     g, Gamma_d = 9.81, 9.8 / 1000
     T_K = f['temp_C'] + 273.15
     N2  = (g / T_K) * (f['dtemp'] / dz_safe + Gamma_d)
     S2  = (f['dspd'] / dz_safe) ** 2
     f['Ri'] = N2 / S2.replace(0, np.nan)
 
-    # Dewpoint depression
     f['dd'] = f['temp_C'] - f['dewpoint_C']
     f['rh_approx'] = (100 - 5 * f['dd']).clip(0, 100)
 
-    # Icing flag: sub-zero, near-saturated
     f['icing'] = (
         f['temp_C'].between(-20, 0) &
         (f['dd'].abs() < 3) &
         f['dewpoint_C'].notna()
     )
 
-    # Heavy moisture flag: warm, near-saturated
     f['heavy_moisture'] = (
         (f['temp_C'] > 0) &
         (f['dd'] < 2) &
         f['dewpoint_C'].notna()
     )
 
-    # Ascent rate stats
     ar      = f['ascent_rate_mps'].dropna() if 'ascent_rate_mps' in f else pd.Series(dtype=float)
     ar_mean = ar.mean() if len(ar) > 0 else np.nan
     ar_std  = ar.std()  if len(ar) > 1 else np.nan
@@ -405,8 +359,49 @@ def engineer_features(flight_df: pd.DataFrame) -> dict | None:
     min_temp_idx = f['temp_C'].idxmin() if f['temp_C'].notna().any() else None
     min_temp     = f['temp_C'].min()
     min_temp_alt = f.loc[min_temp_idx, 'height_m'] if min_temp_idx is not None else np.nan
-   
+
     time_to_burst_mins = len(f) * (1 / 60) if 'time_s' not in f.columns else (f['time_s'].max() - f['time_s'].min()) / 60
+
+    # ── Rule-engine raw signals (draft/rule_engine.py::compute_raw_signals),
+    #    exposed as model features so the classifier sees the same signals
+    #    the secondary-cause labels were derived from. gps_frozen is
+    #    excluded — BUFR inference has no per-level lat/lon. ─────────────────
+    last = f.iloc[-1]
+    dewdep_burst = last['temp_C'] - last['dewpoint_C']
+
+    warm = f[f['temp_C'] > -10]
+    min_dewdep_warm = (warm['temp_C'] - warm['dewpoint_C']).min() if not warm.empty else np.nan
+
+    n_high_rh = int((f['dd'] < 2).sum())
+
+    tail30 = f.tail(30)
+    ascent_drop = tail30['ascent_rate_mps'].diff().min()
+    peak_ascent = tail30['ascent_rate_mps'].max()
+    med_ascent  = f['ascent_rate_mps'].median()
+
+    top_500 = f[f['height_m'] > burst_alt - 500]
+    if len(top_500) > 1:
+        dir_delta = top_500['wind_dir_deg'].diff().abs().max()
+        spd_max   = top_500['wind_speed_mps'].max()
+    else:
+        dir_delta = np.nan
+        spd_max   = np.nan
+
+    # Cold-point tropopause distance: burst altitude minus the altitude of
+    # the coldest temperature above 10 km (matches rule_engine cpt_dist —
+    # NOT the same as shear_to_burst_m above).
+    strato = f[f['height_m'] > 10000]
+    cpt_dist = (burst_alt - strato.loc[strato['temp_C'].idxmin(), 'height_m']) if not strato.empty else np.nan
+
+    tail100 = f.tail(100)
+    pos_diffs = tail100['pressure_hPa'].diff()
+    pos_diffs = pos_diffs[pos_diffs > 0]
+    pressure_increase_total = pos_diffs.sum() if len(pos_diffs) else 0.0
+
+    # Surface-based CAPE/CIN/LCL (MetPy parcel theory, rule_engine.compute_cape_cin) —
+    # scientifically grounded convective-potential signals, replacing the
+    # glitch-prone ascent-rate-spike proxy for Deep Convection.
+    cape_cin = compute_cape_cin(f)
 
     return {
         'burst_pres_hpa'        : burst_pres,
@@ -437,6 +432,19 @@ def engineer_features(flight_df: pd.DataFrame) -> dict | None:
         'tropopause_alt_m'      : min_temp_alt,
         'temp_at_burst_C'       : temp_at_burst,
         'time_to_burst_mins'    : time_to_burst_mins,
+        'dewdep_burst'          : dewdep_burst,
+        'min_dewdep_warm'       : min_dewdep_warm,
+        'n_high_rh'             : n_high_rh,
+        'ascent_drop'           : ascent_drop,
+        'peak_ascent'           : peak_ascent,
+        'med_ascent'            : med_ascent,
+        'dir_delta'             : dir_delta,
+        'spd_max'               : spd_max,
+        'cpt_dist'              : cpt_dist,
+        'pressure_increase_total': pressure_increase_total,
+        'cape_jkg'              : cape_cin['cape_jkg'],
+        'cin_jkg'               : cape_cin['cin_jkg'],
+        'lcl_agl_m'             : cape_cin['lcl_agl_m'],
     }
 
 
@@ -458,7 +466,7 @@ def fill_missing_features(feat: dict, feature_cols: list) -> dict:
         isinstance(feat.get('temp_at_burst_C'), float) and
         np.isnan(feat['temp_at_burst_C'])
     ):
-        feat['temp_at_burst_C'] = feat.get('min_temp_C', 0.0)
+        feat['temp_at_burst_C'] = feat.get('tropopause_temp_C', 0.0)
 
     if feat.get('moist_dd_mean') is None or (
         isinstance(feat.get('moist_dd_mean'), float) and
@@ -466,7 +474,20 @@ def fill_missing_features(feat: dict, feature_cols: list) -> dict:
     ):
         feat['moist_dd_mean'] = 5.0  # neutral value
 
-    # Zero-fill any remaining NaNs
+    # cpt_dist is NaN when the flight never reached 10 km — treat as "far
+    # from the cold point" rather than the generic 0.0 ("right at it").
+    if feat.get('cpt_dist') is None or (
+        isinstance(feat.get('cpt_dist'), float) and np.isnan(feat['cpt_dist'])
+    ):
+        feat['cpt_dist'] = 20000.0
+
+    # min_dewdep_warm is NaN when there are no levels warmer than -10C —
+    # treat as "not saturated" rather than 0.0 ("fully saturated").
+    if feat.get('min_dewdep_warm') is None or (
+        isinstance(feat.get('min_dewdep_warm'), float) and np.isnan(feat['min_dewdep_warm'])
+    ):
+        feat['min_dewdep_warm'] = 50.0
+
     for col in feature_cols:
         v = feat.get(col)
         if v is None or (isinstance(v, float) and np.isnan(v)):
@@ -476,49 +497,89 @@ def fill_missing_features(feat: dict, feature_cols: list) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# 5b. LABEL CODES (Label_End_of_radiosonde.xlsx, see classifier.ipynb cell 3/5)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# 3-letter code for each secondary cause (classifier.ipynb SECONDARY_CODE_MAP).
+SECONDARY_CODE_MAP = {
+    'RH Freeze-out':         'FRZ',
+    'Cloud/Rain Layer':      'CLD',
+    'Deep Convection':       'CNB',
+    'Strong Shear':          'SHR',
+    'Directional Shear':     'DSH',
+    'Pressure Reversal':     'PRS',
+    'Slow Ascent':           'ASN',
+    'RH Saturation':         'SAT',
+    'Cold Point Tropopause': 'CPT',
+    'GPS Fail':              'GPS',
+}
+
+# Combined codes (Primary-Secondary-Suffix) from Label_End_of_radiosonde.xlsx,
+# restricted to the (is_premature & valid) flights this model was trained on
+# (combined_codes_train.csv + combined_codes_test.csv). "Primary" (Balloon
+# Burst / Ascent Stop / etc.) is ground-truth termination metadata that isn't
+# derivable from the BUFR profile, so a predicted secondary cause can map to
+# more than one combined code — listed here as (code, training count), most
+# frequent first.
+#
+# Generated by draft/relabel_secondary.py -> draft/models_v2/combined_code_map.joblib
+# every time the training labels are regenerated, so it stays in sync with
+# monthly retrains. Hardcoded values below are only a fallback for older
+# model bundles that predate the generated artifact.
+COMBINED_CODE_MAP_FALLBACK = {
+    'RH Freeze-out':         [('BUR-FRZ-100', 60), ('ASC-FRZ-UNK', 10)],
+    'Cloud/Rain Layer':      [('BUR-CLD-100', 25)],
+    'Deep Convection':       [('BUR-CNB-100', 25), ('ASC-CNB-UNK', 5)],
+    'Strong Shear':          [('BUR-SHR-100', 111), ('ASC-SHR-UNK', 46), ('UNK-SHR-UNK', 5)],
+    'Pressure Reversal':     [('BUR-PRS-UNK', 35)],
+    'Slow Ascent':           [('ASC-ASN-UNK', 33)],
+    'Cold Point Tropopause': [('TMP-CPT-UNK', 34)],
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # 6. EXPLANATION GENERATOR
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Feature thresholds for evidence extraction — tuned from training data
+# Feature thresholds for evidence extraction — informed by the
+# classify_secondary_multi() rule definitions in classifier.ipynb,
+# translated to the engineer_features() feature set.
 EVIDENCE_THRESHOLDS = {
-    'launch_failure': {
-        'burst_pres_hpa'      : ('high',  150,  'burst pressure was very high ({:.0f} hPa) — balloon never left lower troposphere'),
-        'temp_at_burst_C'     : ('high',  -20,  'burst temperature was warm ({:.1f}°C) — still in mid-troposphere at burst'),
-        'n_turbulent_spikes'  : ('low',   10,   'turbulent spikes were low ({:.0f}) — atmosphere was calm'),
-        'max_wind_speed_mps'  : ('low',   12,   'wind speed was low ({:.1f} m/s) — no wind stress'),
+    'RH Freeze-out': {
+        'temp_at_burst_C'     : ('low',   -40,  'burst temperature was extremely cold ({:.1f}°C)'),
+        'moist_dd_mean'       : ('low',   3.0,  'dewpoint depression near burst was small ({:.1f}°C) — near-saturated'),
     },
-    'deep_moisture_icing': {
-        'icing_depth_m'       : ('high',  3000, 'supercooled layer was {:.0f} m deep — extensive ice formation'),
-        'pw_proxy'            : ('high',  1e6,  'column moisture was high — moist atmospheric profile'),
-        'moist_dd_mean'       : ('low',   3.0,  'dewpoint depression was small ({:.1f}°C) — near-saturated conditions'),
+    'RH Saturation': {
+        'moist_dd_mean'       : ('low',   3.0,  'dewpoint depression averaged only {:.1f}°C — column was near-saturated'),
+        'pw_proxy'            : ('high',  3e5,  'column moisture proxy was high ({:.0f}) — humid profile throughout'),
     },
-    'severe_icing': {
-        'icing_index'         : ('high',  10,   'icing index was high ({:.1f}) — intense supercooled zone'),
-        'icing_depth_m'       : ('high',  1000, 'supercooled layer present ({:.0f} m)'),
+    'Cloud/Rain Layer': {
+        'moist_depth_m'       : ('high',  1000, 'a moist/cloud layer {:.0f} m deep was crossed'),
+        'moist_index'         : ('high',  3e4,  'moisture loading index was elevated ({:.0f})'),
     },
-    'high_updraft': {
-        'ascent_rate_max_spike': ('high', 3.0,  'maximum ascent rate spike was {:.1f} m/s — strong updraft impact'),
-        'ascent_rate_std'     : ('high',  1.0,  'ascent rate variability was high (std={:.2f} m/s)'),
-        'min_richardson'      : ('low',   0.5,  'Richardson number was low ({:.2f}) — dynamic instability'),
-        'max_wind_speed_mps'  : ('high',  15,   'wind speed was elevated ({:.1f} m/s)'),
+    'Strong Shear': {
+        # max_shear thresholds calibrated from train-set percentiles
+        # (draft/models_v2/calib.joblib): p75=7.5, p50=5.96 m/s per 100m.
+        # Old fixed values (0.04 / 0.02) were ~100x too low and triggered
+        # on virtually every flight.
+        'max_shear'           : ('high',  7.5,  'maximum wind shear was high ({:.3f} m/s per 100 m, top quartile)'),
+        'max_wind_speed_mps'  : ('high',  20,   'maximum wind speed was high ({:.1f} m/s)'),
     },
-    'atmospheric_instability': {
-        'ri_alt_m'            : ('high',  10000,'Richardson minimum found at high altitude ({:.0f} m)'),
-        'max_shear'           : ('high',  0.05, 'wind shear was elevated ({:.3f} m/s per 100m)'),
-        'n_unstable_layers'   : ('high',  3,    '{:.0f} dynamically unstable layers detected (Ri < 0.25)'),
+    'Directional Shear': {
+        'max_wind_speed_mps'  : ('low',   15,   'wind speed stayed moderate ({:.1f} m/s) despite the shear event'),
+        'max_shear'           : ('high',  6.0,  'wind shear was elevated ({:.3f} m/s per 100 m, above median)'),
     },
-    'dry_layer': {
-        'moist_dd_mean'       : ('high',  5.0,  'dewpoint depression was large ({:.1f}°C) — very dry atmosphere'),
-        'moist_index'         : ('low',   3.5e5,  'moisture burden was very low {:.3f} — anomalously dry for Indonesia'),
-        'pw_proxy  '          : ('low',  0.04, 'upper-level shear elevated ({:.3f} m/s per 100m)'),
+    'Deep Convection': {
+        'cape_jkg'            : ('high',  1000, 'surface-based CAPE was {:.0f} J/kg — moderate-to-strong convective potential'),
+        'lcl_agl_m'           : ('low',   600,  'lifted condensation level was low ({:.0f} m AGL) — easy cloud formation'),
     },
-    'lower_wind_shear': {
-        'max_shear'           : ('high',  0.05, 'maximum wind shear was {:.3f} m/s per 100m'),
-        'shear_alt_m'         : ('high',  10000,'shear found low in the column ({:.0f} m)'),
+    'Slow Ascent': {
+        'ascent_rate_mean'    : ('low',   3.0,  'mean ascent rate was slow ({:.2f} m/s)'),
+        'time_to_burst_mins'  : ('high',  100,  'flight duration before burst was long ({:.0f} min)'),
     },
-    'sensor_failure': {
-        'tropopause_alt_m'      : ('low',   5000, 'cold point detected at very low altitude ({:.0f} m) — likely sensor error'),
-        'height_m'              : ('high',   5000, 'maximum altitude reached was high ({:.0f} m) while detected tropopause is low — inconsistent with physical burst'),
+    'Cold Point Tropopause': {
+        'cpt_dist'            : ('low',   500,  'burst occurred close to the cold-point tropopause altitude ({:.0f} m away)'),
+        'tropopause_temp_C'   : ('low',   -75,  'tropopause temperature was extremely cold ({:.1f}°C)'),
     },
 }
 
@@ -532,18 +593,26 @@ def generate_explanation(
 ) -> str:
     lines = []
     lines.append("=" * 62)
-    lines.append("  RADIOSONDE BURST CAUSE CLASSIFICATION")
+    lines.append("  RADIOSONDE SECONDARY BURST CAUSE CLASSIFICATION (v2)")
     lines.append("=" * 62)
-    lines.append(f"  Predicted cause  : {cause.replace('_',' ').upper()}")
+    lines.append(f"  Predicted cause  : {cause}")
     lines.append(f"  Confidence       : {confidence:.1f}%")
     lines.append(f"  Burst pressure   : {burst_info['burst_pres_hpa']} hPa  "
                  f"(threshold: {burst_info['threshold_hpa']} hPa)")
     if burst_info.get('burst_alt_m'):
         lines.append(f"  Burst altitude   : {burst_info['burst_alt_m']:,.0f} m")
     lines.append(f"  Sounding levels  : {burst_info['n_levels']}")
+    lines.append(f"  Premature burst  : {'YES' if burst_info['is_premature'] else 'NO (reached nominal ceiling)'}")
     lines.append("-" * 62)
 
-    # Evidence
+    if not burst_info['is_premature']:
+        lines.append("  NOTE: This flight reached the 30 hPa nominal ceiling — it did")
+        lines.append("  NOT burst prematurely. The model (trained on premature flights")
+        lines.append("  only) is reporting which failure-pattern this flight's")
+        lines.append("  end-of-flight profile most closely resembles, not an actual")
+        lines.append("  cause of failure.")
+        lines.append("-" * 62)
+
     lines.append("  EVIDENCE FROM SOUNDING PROFILE:")
     lines.append("")
     thresholds = EVIDENCE_THRESHOLDS.get(cause, {})
@@ -558,26 +627,24 @@ def generate_explanation(
         )
         if triggered:
             try:
-                found.append("  • " + template.format(val))
+                found.append("  - " + template.format(val))
             except Exception:
-                found.append(f"  • {feat_name} = {val:.3f}")
+                found.append(f"  - {feat_name} = {val:.3f}")
 
     if found:
         lines.extend(found)
     else:
-        lines.append("  • Pattern matched cluster profile from training data")
+        lines.append("  - Pattern matched cluster profile from training data")
         lines.append("    (individual thresholds not exceeded but overall")
         lines.append("    feature combination matches this cause)")
 
-    # Cause description
     lines.append("")
     lines.append("  CAUSE DESCRIPTION:")
     desc = CAUSE_DESCRIPTIONS.get(cause, "No description available.")
-    # Word-wrap at 60 chars
     words = desc.split()
     line_buf, wrapped = [], []
     for w in words:
-        if sum(len(x)+1 for x in line_buf) + len(w) > 56:
+        if sum(len(x) + 1 for x in line_buf) + len(w) > 56:
             wrapped.append("  " + " ".join(line_buf))
             line_buf = [w]
         else:
@@ -586,7 +653,6 @@ def generate_explanation(
         wrapped.append("  " + " ".join(line_buf))
     lines.extend(wrapped)
 
-    # Alternative causes
     lines.append("")
     lines.append("  ALTERNATIVE CAUSES:")
     sorted_probs = sorted(all_probs.items(), key=lambda x: x[1], reverse=True)
@@ -595,10 +661,10 @@ def generate_explanation(
         if c == cause:
             continue
         if p >= 5.0:
-            lines.append(f"  • {c.replace('_',' '):<30} {p:.1f}%")
+            lines.append(f"  - {c:<30} {p:.1f}%")
             shown += 1
     if shown == 0:
-        lines.append("  • No alternative above 5% confidence")
+        lines.append("  - No alternative above 5% confidence")
 
     lines.append("=" * 62)
     return "\n".join(lines)
@@ -608,12 +674,11 @@ def generate_explanation(
 # 7. MAIN PIPELINE
 # ══════════════════════════════════════════════════════════════════════════════
 
-def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
+def run_pipeline(file_path: str, model_dir: str = "draft/models_v2") -> dict:
 
     print(f"\nProcessing: {Path(file_path).name}")
     print("-" * 62)
 
-    # ── Step 1: Parse BUFR ────────────────────────────────────────────────────
     print("  [1/6] Parsing BUFR file...")
     df = extract_radiosonde_data(file_path)
 
@@ -623,11 +688,9 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
 
     print(f"        {len(df)} pressure levels extracted")
 
-    # ── Step 2: Clean ─────────────────────────────────────────────────────────
     print("  [2/6] Cleaning profile data...")
     df = clean_profile(df)
 
-    # ── Step 3: 30 hPa threshold ──────────────────────────────────────────────
     print("  [3/6] Checking burst pressure threshold (30 hPa)...")
     burst_info = detect_premature_burst(df)
 
@@ -638,28 +701,15 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
     print(f"        Burst pressure : {burst_info['burst_pres_hpa']} hPa")
     print(f"        Premature      : {'YES' if burst_info['is_premature'] else 'NO'}")
 
-    # ── If nominal, no classifier needed ──────────────────────────────────────
-    if not burst_info['is_premature']:
-        result = {
-            "file"            : Path(file_path).name,
-            "launch_time"     : str(df['launch_time'].iloc[0])
-                                if 'launch_time' in df.columns else None,
-            "station_id"      : str(df['station_id'].iloc[0])
-                                if 'station_id' in df.columns else None,
-            "is_premature"    : False,
-            "burst_pres_hpa"  : burst_info['burst_pres_hpa'],
-            "burst_alt_m"     : burst_info['burst_alt_m'],
-            "n_levels"        : burst_info['n_levels'],
-            "predicted_cause" : "nominal",
-            "confidence_pct"  : 100.0,
-            "explanation"     : generate_explanation(
-                "nominal", 100.0, {}, {"nominal": 100.0}, burst_info
-            ),
-        }
-        print(result["explanation"])
-        return result
+    # Note: the model is trained only on premature flights (its
+    # "secondary cause" labels describe failure signatures near burst),
+    # but it is applied here to ALL flights regardless of is_premature —
+    # for nominal flights this is the model's best guess at which
+    # failure-pattern the end-of-flight profile resembles, not a
+    # statement that the flight actually failed. is_premature is
+    # returned as a display field so the UI can frame the result
+    # accordingly.
 
-    # ── Step 4: Feature engineering ───────────────────────────────────────────
     print("  [4/6] Engineering features from vertical profile...")
     features_raw = engineer_features(df)
 
@@ -667,17 +717,25 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
         print("  ERROR: Too few valid levels for feature engineering.")
         return {"file": file_path, "error": "insufficient_levels"}
 
-    # ── Step 5: Load model ────────────────────────────────────────────────────
+    # Rule-engine trace (analysis overlay only — does not affect the
+    # ML prediction). Uses the frozen percentile distributions from
+    # draft/models_v2/calib.joblib (built once from train flights).
+    rule_trace = None
+    calib_path = Path(model_dir) / "calib.joblib"
+    if calib_path.exists():
+        calib = joblib.load(calib_path)
+        rule_trace = build_rule_trace(df, calib)
+
     print("  [5/6] Loading saved model and scaler...")
-    model_path   = Path(model_dir) / "burst_classifier_model.joblib"
-    scaler_path  = Path(model_dir) / "burst_classifier_scaler.joblib"
-    encoder_path = Path(model_dir) / "burst_label_encoder.joblib"
+    model_path   = Path(model_dir) / "secondary_classifier_model.joblib"
+    scaler_path  = Path(model_dir) / "secondary_classifier_scaler.joblib"
+    encoder_path = Path(model_dir) / "secondary_label_encoder.joblib"
     cols_path    = Path(model_dir) / "feature_cols.joblib"
 
     for p in [model_path, scaler_path, encoder_path, cols_path]:
         if not p.exists():
             print(f"  ERROR: Model file not found: {p}")
-            print("         Run training script first to generate model files.")
+            print("         Run draft/train_secondary_model.py first to generate model files.")
             return {"file": file_path, "error": f"missing_model_file: {p.name}"}
 
     model        = joblib.load(model_path)
@@ -685,14 +743,11 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
     le           = joblib.load(encoder_path)
     feature_cols = joblib.load(cols_path)
 
-    # Fill missing features using same strategy as training
     features = fill_missing_features(features_raw, feature_cols)
 
-    # Build feature vector in exact column order
     X = np.array([[features.get(c, 0.0) for c in feature_cols]])
     X_scaled = scaler.transform(X)
 
-    # ── Step 6: Predict ───────────────────────────────────────────────────────
     print("  [6/6] Running classifier...")
     pred_enc    = model.predict(X_scaled)[0]
     proba       = model.predict_proba(X_scaled)[0]
@@ -703,10 +758,45 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
         for cls, p in zip(le.classes_, proba)
     }
 
-    # ── Generate explanation ──────────────────────────────────────────────────
     explanation = generate_explanation(
         cause, confidence, features, all_probs, burst_info
     )
+
+    # SHAP per-prediction evidence: which features actually drove THIS
+    # prediction (vs the fixed EVIDENCE_THRESHOLDS checklist, which only
+    # checks 1-2 features per class and can be empty even when that class
+    # is predicted). Built fresh per request — TreeExplainer is cheap
+    # (<0.1s) for this model size.
+    explainer  = shap.TreeExplainer(model)
+    shap_vals  = explainer.shap_values(X_scaled)
+    contrib    = shap_vals[0, :, pred_enc]
+    top_idx    = np.argsort(-np.abs(contrib))[:5]
+    shap_evidence = [
+        {
+            "feature": feature_cols[i],
+            "value": round(float(features[feature_cols[i]]), 4),
+            "shap_value": round(float(contrib[i]), 4),
+            "direction": "supports" if contrib[i] > 0 else "opposes",
+        }
+        for i in top_idx
+    ]
+
+    # Label codes for the predicted secondary cause (Label_End_of_radiosonde.xlsx).
+    # combined_code_map.joblib is regenerated each retrain by relabel_secondary.py;
+    # fall back to the frozen snapshot for older model bundles that lack it.
+    combined_code_map_path = Path(model_dir) / "combined_code_map.joblib"
+    combined_code_map = (
+        joblib.load(combined_code_map_path) if combined_code_map_path.exists()
+        else COMBINED_CODE_MAP_FALLBACK
+    )
+
+    secondary_code = SECONDARY_CODE_MAP.get(cause)
+    combos = combined_code_map.get(cause, [])
+    total = sum(n for _, n in combos)
+    combined_code_candidates = [
+        {"code": code, "share_pct": round(100 * n / total, 1)}
+        for code, n in combos
+    ] if total else []
 
     result = {
         "file"             : Path(file_path).name,
@@ -714,16 +804,22 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
                              if 'launch_time' in df.columns else None,
         "station_id"       : str(df['station_id'].iloc[0])
                              if 'station_id' in df.columns else None,
-        "is_premature"     : True,
+        "is_premature"     : burst_info['is_premature'],
         "burst_pres_hpa"   : burst_info['burst_pres_hpa'],
         "burst_alt_m"      : burst_info['burst_alt_m'],
         "n_levels"         : burst_info['n_levels'],
         "predicted_cause"  : cause,
         "confidence_pct"   : round(confidence, 1),
         "all_probabilities": all_probs,
+        "secondary_code"           : secondary_code,
+        "combined_code"            : combined_code_candidates[0]["code"] if combined_code_candidates else None,
+        "combined_code_candidates" : combined_code_candidates,
+        "key_features"     : [e["feature"] for e in shap_evidence if e["direction"] == "supports"],
+        "shap_evidence"    : shap_evidence,
         "features_used"    : {k: round(float(v), 4)
                               for k, v in features.items()
                               if k in feature_cols},
+        "rule_trace"       : rule_trace,
         "explanation"      : explanation,
         "processed_at"     : datetime.utcnow().isoformat() + "Z",
     }
@@ -738,26 +834,14 @@ def run_pipeline(file_path: str, model_dir: str = "models") -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Radiosonde BUFR burst cause classifier"
+        description="Radiosonde BUFR secondary burst-cause classifier (v2)"
     )
-    parser.add_argument(
-        "--file",
-        type    = str,
-        required= True,
-        help    = "Path to BUFR radiosonde file"
-    )
-    parser.add_argument(
-        "--model_dir",
-        type    = str,
-        default = "models",
-        help    = "Directory containing saved model files (default: models/)"
-    )
-    parser.add_argument(
-        "--save_json",
-        type    = str,
-        default = None,
-        help    = "Optional path to save result as JSON e.g. result.json"
-    )
+    parser.add_argument("--file", type=str, required=True,
+                        help="Path to BUFR radiosonde file")
+    parser.add_argument("--model_dir", type=str, default="draft/models_v2",
+                        help="Directory containing saved model files (default: draft/models_v2/)")
+    parser.add_argument("--save_json", type=str, default=None,
+                        help="Optional path to save result as JSON e.g. result.json")
     args = parser.parse_args()
 
     if not Path(args.file).exists():
@@ -767,20 +851,11 @@ def main():
     result = run_pipeline(args.file, args.model_dir)
 
     if args.save_json:
-        save_result = {k: v for k, v in result.items()
-                       if k != 'features_used'}
+        save_result = {k: v for k, v in result.items() if k != 'features_used'}
         with open(args.save_json, 'w') as f:
             json.dump(save_result, f, indent=2, default=str)
         print(f"\nResult saved to: {args.save_json}")
 
 
 if __name__ == "__main__":
-    # Allow direct call with hardcoded file for quick testing
-    if len(sys.argv) == 1:
-        # No args — run on the file from your code
-        result = run_pipeline(
-            "data/A_IUSG51WION111200_C_WIIX_20251011120000.bin",
-            model_dir="models"
-        )
-    else:
-        main()
+    main()

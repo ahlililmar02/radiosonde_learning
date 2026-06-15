@@ -1,0 +1,334 @@
+flight_id,primary,secondary,combined_code,confidence,valid,is_premature,burst_pres,launch_time,burst_height_m
+1,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,10.5,2025-10-28 11:32:24+00:00,30660.0
+5,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.98,True,False,15.9,2025-10-28 23:44:04+00:00,27824.0
+9,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,61.2,2025-10-28 23:31:33+00:00,19454.0
+15,Not Specified,Unknown,UNK-UNK-UNK,0.0,False,True,100.0,2025-03-09 23:30:01+00:00,16618.0
+16,Not Specified,Unknown,UNK-UNK-UNK,0.0,False,False,18.0,2025-03-08 23:29:56+00:00,26903.0
+19,Not Specified,Unknown,UNK-UNK-UNK,0.0,False,True,118.9,2025-03-07 23:29:58+00:00,15594.0
+28,Not Specified,Unknown,UNK-UNK-UNK,0.0,False,False,10.1,2025-03-02 23:29:56+00:00,30679.0
+37,Not Specified,Strong Shear,UNK-SHR-UNK,0.95,True,True,103.0,2025-03-12 23:30:12+00:00,16448.0
+38,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,68.4,2025-10-29 11:32:09+00:00,18792.0
+47,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,True,53.2,2025-10-26 11:32:48+00:00,20263.0
+48,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.92,True,False,19.4,2025-10-25 23:35:33+00:00,26487.0
+50,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,13.3,2025-10-24 23:45:06+00:00,28917.0
+53,Balloon Burst,Strong Shear,BUR-SHR-100,0.99,True,True,62.6,2025-10-23 11:31:26+00:00,19293.0
+57,Balloon Burst,Strong Shear,BUR-SHR-100,0.81,True,False,17.0,2025-10-21 11:30:11+00:00,27348.0
+67,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.41,True,True,105.7,2025-10-16 11:32:45+00:00,16280.0
+69,Balloon Burst,Strong Shear,BUR-SHR-100,0.83,True,False,20.4,2025-10-15 11:42:31+00:00,26131.0
+78,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,False,13.5,2025-10-10 23:47:05+00:00,28795.0
+82,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,13.1,2025-10-27 23:32:58+00:00,29243.0
+85,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,False,14.4,2025-10-26 11:32:46+00:00,28494.0
+127,Balloon Burst,Deep Convection,BUR-CNB-100,0.91,True,False,18.4,2025-10-24 11:53:49+00:00,26851.0
+132,Balloon Burst,Deep Convection,BUR-CNB-100,0.99,True,False,13.7,2025-10-21 23:49:46+00:00,28893.0
+137,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,False,19.9,2025-10-19 11:52:27+00:00,26286.0
+146,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,10.7,2025-10-14 23:48:51+00:00,30400.0
+150,Balloon Burst,Deep Convection,BUR-CNB-100,1.0,True,False,16.6,2025-10-12 23:39:44+00:00,27484.0
+154,Balloon Burst,Deep Convection,BUR-CNB-100,0.95,True,False,14.4,2025-10-10 23:48:51+00:00,28378.0
+157,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,12.6,2025-10-25 23:38:25+00:00,29437.0
+162,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,False,16.2,2025-10-23 11:35:47+00:00,27692.0
+180,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,14.0,2025-10-13 23:39:14+00:00,28654.0
+183,Balloon Burst,Deep Convection,BUR-CNB-100,0.91,True,False,17.3,2025-10-12 11:36:27+00:00,27251.0
+186,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.6,2025-10-10 23:34:46+00:00,29879.0
+187,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.9,2025-10-10 11:34:41+00:00,29752.0
+188,Balloon Burst,Strong Shear,BUR-SHR-100,0.91,True,False,13.3,2025-10-09 23:31:55+00:00,28981.0
+189,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,10.4,2025-10-29 23:35:37+00:00,30686.0
+190,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.86,True,False,10.3,2025-10-27 23:35:47+00:00,30723.0
+191,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.89,True,True,59.1,2025-10-27 11:35:42+00:00,19651.0
+195,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.94,True,False,8.7,2025-10-25 11:35:36+00:00,31961.0
+198,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,False,26.9,2025-10-23 23:32:42+00:00,24395.0
+199,Balloon Burst,Strong Shear,BUR-SHR-100,0.76,True,True,41.4,2025-10-23 11:36:35+00:00,21730.0
+204,Temperature KO,Cold Point Tropopause,TMP-CPT-UNK,0.91,True,True,141.1,2025-10-20 23:35:30+00:00,14627.0
+213,Not Specified,Strong Shear,UNK-SHR-UNK,0.93,True,True,100.0,2025-10-16 11:35:37+00:00,16603.0
+222,Balloon Burst,Strong Shear,BUR-SHR-100,0.85,True,True,31.6,2025-10-11 23:35:45+00:00,23391.0
+228,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.94,True,False,16.8,2025-10-27 23:32:27+00:00,27466.0
+232,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,9.3,2025-10-25 23:31:53+00:00,31445.0
+241,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,True,105.8,2025-10-21 11:31:26+00:00,16309.0
+246,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,59.0,2025-10-18 23:31:04+00:00,19625.0
+252,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,56.0,2025-10-15 23:32:22+00:00,19926.0
+262,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,58.2,2025-10-10 23:30:25+00:00,19717.0
+264,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,50.3,2025-10-09 23:35:43+00:00,20571.0
+270,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,False,14.4,2025-10-30 23:46:16+00:00,28481.0
+275,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,1.0,True,False,26.9,2025-10-31 23:48:05+00:00,24402.0
+293,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.3,2025-11-02 23:35:51+00:00,30028.0
+294,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,True,39.2,2025-11-03 00:52:39+00:00,22080.0
+303,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,False,14.4,2025-11-04 23:39:52+00:00,28419.0
+304,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,False,11.1,2025-11-04 11:35:59+00:00,30182.0
+308,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.98,True,False,29.4,2025-11-04 11:30:32+00:00,23841.0
+313,Balloon Burst,Strong Shear,BUR-SHR-100,0.98,True,True,54.9,2025-11-05 11:40:06+00:00,20048.0
+314,Balloon Burst,Strong Shear,BUR-SHR-100,0.98,True,False,21.3,2025-11-05 23:42:05+00:00,25828.0
+319,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,74.8,2025-11-06 11:30:28+00:00,18247.0
+333,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,11.5,2025-11-08 11:33:18+00:00,30018.0
+335,Not Specified,Strong Shear,UNK-SHR-UNK,0.93,True,True,100.0,2025-11-08 23:35:32+00:00,16581.0
+339,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,51.5,2025-11-09 11:33:01+00:00,20403.0
+349,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.98,True,True,82.0,2025-11-10 11:55:21+00:00,17717.0
+350,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.85,True,False,11.9,2025-11-10 23:48:58+00:00,29754.0
+358,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.83,True,False,8.4,2025-11-10 23:30:46+00:00,32042.0
+361,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,True,117.4,2025-11-11 11:30:29+00:00,15673.0
+366,Temperature KO,Cold Point Tropopause,TMP-CPT-UNK,0.91,True,True,269.7,2025-11-11 23:30:26+00:00,10477.0
+372,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.88,True,False,17.5,2025-11-12 23:44:47+00:00,27129.0
+379,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,19.4,2025-11-12 11:33:54+00:00,26513.0
+395,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,35.9,2025-11-13 23:30:49+00:00,22549.0
+397,Balloon Burst,Strong Shear,BUR-SHR-100,0.84,True,False,15.4,2025-11-14 11:32:30+00:00,27958.0
+400,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,63.3,2025-11-14 11:33:39+00:00,19179.0
+405,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,False,18.1,2025-11-16 11:42:07+00:00,26900.0
+417,Balloon Burst,Strong Shear,BUR-SHR-100,0.82,True,False,19.1,2025-11-17 23:38:35+00:00,26593.0
+433,Temperature KO,Unknown,TMP-UNK-UNK,0.0,False,True,311.3,2025-11-18 23:39:11+00:00,9415.0
+435,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,False,9.1,2025-11-18 23:44:26+00:00,31664.0
+445,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.92,True,False,12.3,2025-11-19 23:45:20+00:00,29446.0
+451,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,50.2,2025-11-20 11:30:22+00:00,20494.0
+463,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,58.6,2025-11-21 11:30:48+00:00,19598.0
+466,Balloon Burst,Strong Shear,BUR-SHR-100,0.8,True,True,42.5,2025-11-21 11:34:40+00:00,21516.0
+468,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,True,61.5,2025-11-21 11:30:32+00:00,19325.0
+469,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.93,True,False,14.4,2025-11-21 23:43:05+00:00,28405.0
+471,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,20.2,2025-11-21 23:41:56+00:00,26228.0
+472,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,12.7,2025-11-21 23:32:30+00:00,29262.0
+476,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,12.9,2025-11-22 11:33:22+00:00,29192.0
+480,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.79,True,True,43.1,2025-11-22 11:31:18+00:00,21427.0
+502,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,26.1,2025-11-24 11:32:38+00:00,24564.0
+509,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,False,14.5,2025-11-24 23:35:39+00:00,28334.0
+515,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,64.5,2025-11-25 11:35:42+00:00,19052.0
+518,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,False,21.0,2025-11-25 23:37:38+00:00,26009.0
+529,Balloon Burst,Deep Convection,BUR-CNB-100,0.93,True,False,11.0,2025-11-26 23:31:52+00:00,30244.0
+538,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.7,True,True,73.4,2025-11-27 11:35:17+00:00,18306.0
+543,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,False,12.9,2025-11-27 23:35:48+00:00,29147.0
+549,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,15.2,2025-11-28 11:35:52+00:00,27981.0
+550,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,False,18.9,2025-11-28 23:32:58+00:00,26570.0
+552,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,25.5,2025-11-28 23:36:44+00:00,24616.0
+554,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,73.7,2025-11-28 23:30:37+00:00,18286.0
+558,Balloon Burst,Deep Convection,BUR-CNB-100,0.92,True,True,71.9,2025-11-29 11:32:53+00:00,18446.0
+572,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,8.3,2025-11-30 11:36:40+00:00,32119.0
+573,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,111.5,2025-11-30 11:30:23+00:00,15983.0
+574,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,15.0,2025-11-30 23:36:42+00:00,28050.0
+582,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,450.2,2025-12-01 11:39:21+00:00,6692.0
+598,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,48.5,2025-12-02 23:36:29+00:00,20656.0
+600,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,13.4,2025-12-02 23:47:20+00:00,28857.0
+601,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,10.2,2025-12-02 23:35:26+00:00,30742.0
+604,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,47.0,2025-12-03 11:27:06+00:00,20888.0
+606,Balloon Burst,Strong Shear,BUR-SHR-100,0.79,True,False,20.2,2025-12-03 11:33:13+00:00,26192.0
+607,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.98,True,True,330.6,2025-12-03 11:35:40+00:00,8995.0
+611,Balloon Burst,Deep Convection,BUR-CNB-100,0.91,True,False,10.9,2025-12-03 23:51:15+00:00,30198.0
+615,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,True,90.2,2025-12-04 11:45:35+00:00,17160.0
+630,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.92,True,False,8.2,2025-12-04 23:36:14+00:00,32177.0
+641,Balloon Burst,Strong Shear,BUR-SHR-100,0.9,True,False,19.0,2025-12-06 23:34:18+00:00,26589.0
+645,Balloon Burst,Strong Shear,BUR-SHR-100,0.81,True,False,14.6,2025-12-06 23:35:28+00:00,28228.0
+655,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.85,True,True,71.6,2025-12-07 11:35:11+00:00,18389.0
+659,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,False,17.2,2025-12-07 23:31:58+00:00,27187.0
+660,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.95,True,False,7.4,2025-12-07 23:37:50+00:00,32786.0
+663,Balloon Burst,Strong Shear,BUR-SHR-100,0.91,True,False,9.7,2025-12-08 11:37:54+00:00,31002.0
+669,Balloon Burst,Strong Shear,BUR-SHR-100,0.8,True,False,10.4,2025-12-08 23:34:18+00:00,30610.0
+675,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,21.6,2025-12-09 23:32:10+00:00,25692.0
+677,Temperature KO,Unknown,TMP-UNK-UNK,0.0,False,True,452.8,2025-12-09 23:55:23+00:00,6640.0
+683,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.98,True,True,109.5,2025-12-09 23:33:41+00:00,16073.0
+685,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.99,True,True,60.0,2025-12-10 11:33:56+00:00,19425.0
+686,Balloon Burst,Deep Convection,BUR-CNB-100,0.92,True,False,7.8,2025-12-10 11:31:45+00:00,32492.0
+692,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,568.8,2025-12-10 23:31:34+00:00,4853.0
+714,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,49.8,2025-12-13 23:52:19+00:00,20519.0
+716,Balloon Burst,Strong Shear,BUR-SHR-100,0.85,True,False,10.3,2025-12-13 23:37:32+00:00,30543.0
+720,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,90.6,2025-12-14 23:42:27+00:00,17097.0
+728,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.77,True,True,39.5,2025-12-14 11:35:38+00:00,21889.0
+732,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,75.4,2025-12-15 11:34:40+00:00,18168.0
+734,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.81,True,True,52.1,2025-12-15 11:35:58+00:00,20233.0
+736,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,47.9,2025-12-15 23:56:29+00:00,20718.0
+742,Balloon Burst,Strong Shear,BUR-SHR-100,0.78,True,True,35.0,2025-12-16 11:33:54+00:00,22619.0
+744,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.2,2025-12-16 11:36:03+00:00,30039.0
+746,Not Specified,Unknown,UNK-UNK-UNK,0.0,False,True,48.9,2025-12-16 11:30:44+00:00,20635.0
+749,Balloon Burst,Deep Convection,BUR-CNB-100,1.0,True,False,19.1,2025-12-16 23:48:53+00:00,26493.0
+750,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,13.0,2025-12-16 23:33:18+00:00,28991.0
+751,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,6.8,2025-12-16 23:35:20+00:00,33334.0
+764,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,17.2,2025-12-18 11:40:49+00:00,27161.0
+766,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,53.0,2025-12-18 11:39:47+00:00,20179.0
+767,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.77,True,True,61.7,2025-12-18 11:35:55+00:00,19256.0
+769,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,14.6,2025-12-18 23:34:52+00:00,28190.0
+770,Balloon Burst,Strong Shear,BUR-SHR-100,0.77,True,False,24.7,2025-12-18 23:33:35+00:00,24928.0
+775,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.8,2025-12-19 23:36:10+00:00,29709.0
+786,Temperature KO,Cold Point Tropopause,TMP-CPT-UNK,0.91,True,True,273.6,2025-12-20 23:50:26+00:00,10362.0
+793,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.96,True,True,44.6,2025-12-20 11:36:01+00:00,21188.0
+797,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,7.4,2025-12-20 23:36:38+00:00,32774.0
+800,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,12.8,2025-12-21 11:34:43+00:00,29117.0
+801,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.5,2025-12-21 11:31:40+00:00,29911.0
+802,Balloon Burst,Strong Shear,BUR-SHR-100,0.8,True,True,35.5,2025-12-21 11:35:06+00:00,22613.0
+805,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,True,64.9,2025-12-22 11:39:44+00:00,18987.0
+807,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,False,20.0,2025-12-21 23:31:03+00:00,26233.0
+810,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,39.4,2025-12-21 23:30:57+00:00,21964.0
+815,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,True,82.6,2025-12-22 11:35:26+00:00,17622.0
+816,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,30.3,2025-12-22 11:34:35+00:00,23574.0
+818,Balloon Burst,Strong Shear,BUR-SHR-100,0.8,True,True,31.5,2025-12-22 23:33:35+00:00,23363.0
+819,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.97,True,False,10.4,2025-12-22 23:56:47+00:00,30579.0
+824,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,15.8,2025-12-23 11:58:07+00:00,27764.0
+850,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,10.9,2025-12-25 23:49:03+00:00,30300.0
+854,Balloon Burst,Strong Shear,BUR-SHR-100,0.84,True,True,120.3,2025-12-26 11:33:05+00:00,15537.0
+859,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,53.9,2025-12-26 11:30:44+00:00,20075.0
+869,Balloon Burst,Strong Shear,BUR-SHR-100,1.0,True,False,20.8,2025-12-27 11:37:56+00:00,25894.0
+881,Balloon Burst,Deep Convection,BUR-CNB-100,0.92,True,False,9.5,2025-12-28 11:32:56+00:00,31223.0
+884,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,11.3,2025-12-28 23:34:06+00:00,30100.0
+889,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.96,True,True,99.6,2025-12-28 11:49:50+00:00,16618.0
+893,Balloon Burst,Strong Shear,BUR-SHR-100,0.82,True,False,17.5,2025-12-29 11:39:11+00:00,27102.0
+897,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.84,True,False,12.7,2025-12-29 23:42:57+00:00,29264.0
+899,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,12.0,2025-12-29 23:33:48+00:00,29557.0
+903,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,26.5,2025-12-30 11:33:02+00:00,24396.0
+905,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.82,True,False,11.6,2025-12-30 11:32:41+00:00,29837.0
+909,Temperature KO,Unknown,TMP-UNK-UNK,0.0,False,True,336.6,2025-12-30 11:40:55+00:00,8857.0
+911,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,62.5,2025-12-30 11:35:25+00:00,19207.0
+912,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,False,13.0,2025-12-30 23:36:15+00:00,29005.0
+927,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,60.6,2026-01-01 11:37:09+00:00,19407.0
+934,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,14.3,2026-01-01 23:35:53+00:00,28419.0
+935,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,14.7,2026-01-01 23:32:11+00:00,28130.0
+936,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,23.0,2026-01-01 23:32:21+00:00,25246.0
+944,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,9.8,2026-01-02 23:44:49+00:00,30924.0
+947,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,51.4,2026-01-03 11:34:01+00:00,20341.0
+948,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,False,14.1,2026-01-03 23:30:57+00:00,28535.0
+964,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,False,22.5,2026-01-04 23:43:15+00:00,25402.0
+972,Balloon Burst,Strong Shear,BUR-SHR-100,1.0,True,True,52.0,2026-01-05 11:38:50+00:00,20286.0
+973,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.85,True,False,11.5,2026-01-05 11:46:50+00:00,29814.0
+979,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.87,True,False,12.2,2026-01-05 23:35:24+00:00,29430.0
+981,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,44.0,2026-01-05 23:33:59+00:00,21246.0
+983,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.52,True,True,119.3,2026-01-06 11:31:23+00:00,15545.0
+986,Balloon Burst,Strong Shear,BUR-SHR-100,0.81,True,False,19.8,2026-01-06 23:28:57+00:00,26270.0
+988,Balloon Burst,Strong Shear,BUR-SHR-100,1.0,True,False,10.5,2026-01-06 23:37:20+00:00,30431.0
+990,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,10.1,2026-01-06 23:36:53+00:00,30662.0
+992,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,45.6,2026-01-06 23:31:49+00:00,21059.0
+1008,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.87,True,False,10.1,2026-01-08 23:31:10+00:00,30695.0
+1010,Balloon Burst,Deep Convection,BUR-CNB-100,0.95,True,False,13.1,2026-01-08 23:54:36+00:00,28992.0
+1011,Temperature KO,Cold Point Tropopause,TMP-CPT-UNK,0.91,True,True,152.7,2026-01-08 11:39:36+00:00,14160.0
+1012,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.93,True,False,11.1,2026-01-08 23:33:17+00:00,30121.0
+1020,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,10.7,2026-01-09 23:31:15+00:00,30345.0
+1023,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,18.4,2026-01-09 11:33:12+00:00,26766.0
+1026,Balloon Burst,Strong Shear,BUR-SHR-100,0.99,True,False,7.6,2026-01-09 23:36:25+00:00,32724.0
+1027,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,613.2,2026-01-09 11:35:56+00:00,4214.0
+1034,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.96,True,False,7.7,2026-01-10 23:38:04+00:00,32562.0
+1040,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,20.0,2026-01-11 11:35:30+00:00,26190.0
+1042,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,1.0,True,False,13.6,2026-01-11 23:38:32+00:00,28658.0
+1043,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,False,17.0,2026-01-11 23:34:55+00:00,27313.0
+1045,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,27.7,2026-01-11 23:30:53+00:00,24142.0
+1048,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,55.1,2026-01-12 12:01:27+00:00,19960.0
+1062,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.91,True,False,17.0,2026-01-13 11:31:34+00:00,27243.0
+1063,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,10.7,2026-01-13 23:36:13+00:00,30298.0
+1070,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,56.2,2026-01-13 11:31:01+00:00,19831.0
+1071,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,379.3,2026-01-15 11:39:28+00:00,7971.0
+1081,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.88,True,True,46.4,2026-01-10 11:57:06+00:00,20972.0
+1083,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,12.5,2026-01-16 23:39:57+00:00,29264.0
+1090,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,True,37.8,2026-01-16 11:48:38+00:00,22161.0
+1097,Balloon Burst,Strong Shear,BUR-SHR-100,0.99,True,False,20.2,2026-01-15 23:33:06+00:00,26095.0
+1098,Balloon Burst,Strong Shear,BUR-SHR-100,0.97,True,False,11.1,2026-01-15 11:40:42+00:00,30091.0
+1105,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.94,True,True,38.6,2026-01-17 11:29:53+00:00,18466.0
+1106,Ascent Stop,Strong Shear,ASC-SHR-UNK,1.0,True,True,105.1,2026-01-16 23:30:27+00:00,16249.0
+1109,Temperature KO,Cold Point Tropopause,TMP-CPT-UNK,0.91,True,True,223.3,2026-01-10 11:30:25+00:00,11717.0
+1111,Balloon Burst,Deep Convection,BUR-CNB-100,0.99,True,False,10.7,2026-01-18 23:39:04+00:00,30290.0
+1116,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,386.5,2026-01-19 11:34:50+00:00,7815.0
+1118,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,48.1,2026-01-19 11:32:58+00:00,20743.0
+1129,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,9.1,2026-01-20 23:39:37+00:00,31403.0
+1132,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,False,7.4,2026-01-20 23:35:27+00:00,32787.0
+1134,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,44.7,2026-01-20 23:30:51+00:00,21173.0
+1136,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.83,True,False,13.2,2026-01-21 23:43:16+00:00,28911.0
+1138,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.86,True,False,14.0,2026-01-22 23:32:25+00:00,28553.0
+1140,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,10.8,2026-01-22 23:35:26+00:00,30242.0
+1150,Balloon Burst,Strong Shear,BUR-SHR-100,0.93,True,False,10.1,2026-01-24 23:32:38+00:00,30729.0
+1160,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,53.9,2026-01-25 23:34:38+00:00,20102.0
+1161,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,11.8,2026-01-25 11:35:06+00:00,29690.0
+1173,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,True,44.0,2026-01-26 11:33:36+00:00,21291.0
+1174,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,False,7.1,2026-01-26 23:35:30+00:00,33202.0
+1180,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,76.0,2025-12-12 11:33:49+00:00,18085.0
+1186,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.7,2025-12-21 23:46:23+00:00,29881.0
+1188,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.8,2025-12-19 23:36:10+00:00,29709.0
+1193,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,64.8,2025-12-24 11:40:24+00:00,19004.0
+1199,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,54.1,2026-01-27 11:37:50+00:00,20049.0
+1200,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,11.6,2026-01-27 23:33:10+00:00,29820.0
+1201,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,12.6,2026-01-27 11:31:05+00:00,29264.0
+1203,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,29.4,2026-01-27 11:46:52+00:00,23719.0
+1204,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,11.1,2026-01-27 23:32:05+00:00,30071.0
+1205,Balloon Burst,Strong Shear,BUR-SHR-100,0.81,True,False,17.5,2026-01-27 00:05:08+00:00,27110.0
+1208,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.88,True,True,69.5,2026-01-27 23:35:01+00:00,18599.0
+1232,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,73.5,2026-01-29 23:30:26+00:00,18295.0
+1240,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.92,True,True,116.1,2026-02-01 11:35:20+00:00,15729.0
+1252,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,16.9,2026-01-23 11:35:29+00:00,27325.0
+1256,Balloon Burst,Strong Shear,BUR-SHR-100,1.0,True,False,10.7,2026-01-24 11:39:11+00:00,30404.0
+1258,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,1.0,True,False,16.6,2026-01-23 11:44:17+00:00,27437.0
+1267,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,12.6,2026-01-23 23:31:44+00:00,29261.0
+1268,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.8,True,False,12.0,2026-01-23 11:46:15+00:00,29543.0
+1270,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,341.9,2026-01-30 23:36:23+00:00,8743.0
+1271,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.96,True,True,508.6,2026-01-30 11:35:50+00:00,5743.0
+1275,Balloon Burst,Strong Shear,BUR-SHR-100,0.98,True,True,57.4,2026-01-31 11:30:26+00:00,19704.0
+1280,Balloon Burst,Strong Shear,BUR-SHR-100,0.96,True,True,95.1,2026-01-23 11:30:37+00:00,16852.0
+1284,Balloon Burst,Deep Convection,BUR-CNB-100,0.91,True,False,15.0,2026-02-02 11:41:42+00:00,28073.0
+1298,Balloon Burst,Strong Shear,BUR-SHR-100,0.95,True,True,53.2,2026-02-04 11:38:33+00:00,20127.0
+1306,Ascent Stop,RH Freeze-out,ASC-FRZ-UNK,0.72,True,True,175.5,2026-02-04 11:30:50+00:00,13266.0
+1308,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,41.7,2026-02-05 11:33:21+00:00,21598.0
+1309,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,False,14.5,2026-02-05 23:33:07+00:00,28271.0
+1314,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,True,53.1,2026-02-05 11:35:54+00:00,20198.0
+1321,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,1.0,True,False,19.6,2026-02-08 23:41:32+00:00,26404.0
+1328,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,False,27.1,2026-02-08 11:30:40+00:00,24239.0
+1331,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.98,True,False,13.0,2026-02-09 23:32:53+00:00,29017.0
+1336,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,88.6,2026-02-09 11:42:09+00:00,17257.0
+1341,Balloon Burst,Strong Shear,BUR-SHR-100,0.97,True,False,26.5,2026-02-10 11:38:41+00:00,24319.0
+1342,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,13.2,2026-02-10 11:38:07+00:00,28977.0
+1347,Balloon Burst,Strong Shear,BUR-SHR-100,0.92,True,False,12.4,2026-02-10 23:42:20+00:00,29328.0
+1348,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,9.6,2026-02-10 23:32:41+00:00,31048.0
+1350,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,17.0,2026-02-10 23:40:10+00:00,27271.0
+1357,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,False,10.0,2026-02-11 23:55:38+00:00,30781.0
+1358,Balloon Burst,Deep Convection,BUR-CNB-100,0.95,True,False,19.6,2026-02-11 11:39:30+00:00,26316.0
+1361,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.97,True,False,8.2,2026-02-11 23:35:31+00:00,32032.0
+1366,Temperature KO,Unknown,TMP-UNK-UNK,0.0,False,True,573.2,2026-02-12 11:40:03+00:00,3876.0
+1368,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.77,True,True,41.6,2026-02-12 11:32:43+00:00,21648.0
+1370,Balloon Burst,Strong Shear,BUR-SHR-100,0.82,True,False,24.2,2026-02-12 11:40:36+00:00,24973.0
+1377,Balloon Burst,Strong Shear,BUR-SHR-100,0.94,True,True,54.1,2026-02-17 23:48:21+00:00,20037.0
+1379,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.9,True,False,10.2,2026-02-17 23:31:08+00:00,30637.0
+1381,Balloon Burst,Deep Convection,BUR-CNB-100,0.97,True,False,24.4,2026-02-17 23:39:19+00:00,24916.0
+1384,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,49.2,2026-02-17 11:39:03+00:00,20616.0
+1385,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.89,True,False,7.6,2026-02-17 23:35:48+00:00,32518.0
+1391,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.76,True,False,25.1,2026-02-18 23:32:42+00:00,24807.0
+1395,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.79,True,False,8.9,2026-02-18 23:38:27+00:00,31413.0
+1399,Ascent Stop,RH Freeze-out,ASC-FRZ-UNK,0.55,True,True,124.9,2026-02-18 23:30:30+00:00,15303.0
+1403,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.79,True,False,21.0,2026-02-19 23:34:39+00:00,25905.0
+1406,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,True,37.8,2026-02-19 11:34:42+00:00,22236.0
+1408,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.86,True,True,125.9,2026-02-19 11:37:48+00:00,15322.0
+1409,Balloon Burst,Strong Shear,BUR-SHR-100,0.98,True,False,10.0,2026-02-19 23:35:31+00:00,30753.0
+1410,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,44.3,2026-02-19 11:34:52+00:00,21293.0
+1426,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,80.8,2026-02-23 11:44:53+00:00,17761.0
+1427,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.77,True,False,17.4,2026-02-23 23:32:36+00:00,27132.0
+1429,Balloon Burst,Deep Convection,BUR-CNB-100,0.99,True,False,13.6,2026-02-23 23:40:56+00:00,28740.0
+1434,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,51.4,2026-02-23 11:34:07+00:00,20370.0
+1441,Balloon Burst,Deep Convection,BUR-CNB-100,0.95,True,False,14.6,2026-02-24 23:40:04+00:00,28279.0
+1445,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.94,True,False,7.5,2026-02-24 23:35:44+00:00,32742.0
+1456,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.85,True,False,14.2,2026-02-25 23:31:19+00:00,28471.0
+1464,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,14.2,2026-02-26 11:31:27+00:00,28470.0
+1467,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.83,True,False,12.0,2026-02-26 23:31:40+00:00,29596.0
+1475,Balloon Burst,Deep Convection,BUR-CNB-100,0.94,True,False,11.7,2026-02-28 23:37:30+00:00,29756.0
+1487,Balloon Burst,Strong Shear,BUR-SHR-100,0.98,True,False,8.5,2026-03-01 23:37:07+00:00,31921.0
+1489,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.96,True,True,141.7,2026-03-01 23:41:21+00:00,14534.0
+1492,Balloon Burst,Strong Shear,BUR-SHR-100,0.97,True,True,116.5,2026-03-02 11:31:54+00:00,15695.0
+1498,Balloon Burst,Cloud/Rain Layer,BUR-CLD-100,0.78,True,True,56.9,2026-03-02 11:40:30+00:00,19778.0
+1504,Balloon Burst,Deep Convection,BUR-CNB-100,0.93,True,True,62.4,2026-03-03 11:32:19+00:00,19237.0
+1505,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.79,True,True,32.4,2026-03-03 23:31:25+00:00,23206.0
+1507,Balloon Burst,Deep Convection,BUR-CNB-100,0.91,True,False,10.6,2026-03-03 23:54:15+00:00,30486.0
+1510,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,618.8,2026-03-03 11:34:32+00:00,3320.0
+1514,Ascent Stop,Slow Ascent,ASC-ASN-UNK,0.98,True,True,140.1,2026-03-03 11:53:22+00:00,14626.0
+1515,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.96,True,False,11.6,2026-03-04 23:49:39+00:00,29799.0
+1530,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,True,75.2,2026-03-05 11:34:33+00:00,18173.0
+1553,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.92,True,False,12.7,2026-03-09 23:32:56+00:00,29230.0
+1554,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,88.1,2026-03-09 11:36:34+00:00,17306.0
+1556,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,45.5,2026-03-09 11:36:05+00:00,21111.0
+1566,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.91,True,False,10.8,2026-03-10 23:49:49+00:00,30322.0
+1581,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,64.9,2026-03-11 23:30:59+00:00,19007.0
+1582,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,52.2,2026-03-11 11:31:42+00:00,20296.0
+1585,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.98,True,False,13.3,2026-03-12 23:33:36+00:00,28922.0
+1587,Balloon Burst,Deep Convection,BUR-CNB-100,0.99,True,False,12.2,2026-03-12 23:34:02+00:00,29508.0
+1588,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.55,True,True,126.7,2026-03-12 11:34:11+00:00,15224.0
+1589,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,21.5,2026-03-12 23:34:43+00:00,25789.0
+1591,Balloon Burst,Strong Shear,BUR-SHR-100,1.0,True,False,9.5,2026-03-12 23:35:30+00:00,31160.0
+1604,Balloon Burst,RH Freeze-out,BUR-FRZ-100,0.69,True,True,66.0,2026-03-15 11:35:48+00:00,18924.0
+1605,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,405.8,2026-03-15 23:32:18+00:00,7464.0
+1612,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,76.0,2026-03-16 11:41:26+00:00,18112.0
+1614,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,47.1,2026-03-16 11:36:26+00:00,20918.0
+1621,Balloon Burst,Deep Convection,BUR-CNB-100,0.97,True,False,16.9,2026-03-21 11:32:16+00:00,27424.0
+1626,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.94,True,False,18.1,2026-03-21 23:31:43+00:00,26960.0
+1627,Balloon Burst,Deep Convection,BUR-CNB-100,0.98,True,False,12.1,2026-03-21 23:40:41+00:00,29593.0
+1630,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.85,True,True,63.0,2026-03-21 23:30:35+00:00,19161.0
+1635,Ascent Stop,Unknown,ASC-UNK-UNK,0.0,False,True,367.9,2026-03-22 11:35:20+00:00,8205.0
+1636,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,94.7,2026-03-22 11:31:01+00:00,16913.0
+1638,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,18.8,2026-03-24 11:32:04+00:00,26667.0
+1645,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.97,True,False,8.4,2026-03-24 23:38:31+00:00,32092.0
+1654,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,False,14.0,2026-03-25 11:37:11+00:00,28699.0
+1655,Balloon Burst,Pressure Reversal,BUR-PRS-UNK,0.95,True,False,12.4,2026-03-25 23:36:37+00:00,29432.0
+1656,Balloon Burst,Unknown,BUR-UNK-100,0.0,False,True,86.5,2026-03-25 11:31:21+00:00,17400.0
+1658,Ascent Stop,Deep Convection,ASC-CNB-UNK,0.92,True,True,35.7,2026-03-25 11:36:06+00:00,22599.0
+1660,Ascent Stop,Strong Shear,ASC-SHR-UNK,0.85,True,True,33.5,2026-03-25 11:30:33+00:00,22991.0
