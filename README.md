@@ -26,7 +26,18 @@ uv run python app.py
 
 Then open http://127.0.0.1:5000/.
 
+### Without uv
+
+If `uv` isn't available, use `requirements.txt` with a plain venv:
+
+```
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
 ## Retraining
 
-See [CLAUDE.md](CLAUDE.md) for the full architecture and the retraining pipeline
-(`classifier.build_calib` -> `classifier.relabel_secondary` -> `classifier.train_secondary_model`).
+Retraining pipeline (run in order whenever the training data changes):
+`classifier.build_calib` -> `classifier.relabel_secondary` -> `classifier.train_secondary_model`.
