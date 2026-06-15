@@ -2,17 +2,17 @@
 relabel_secondary.py
 ─────────────────────
 Regenerates combined_codes_train.csv / combined_codes_test.csv using the
-CAPE-based Deep Convection rule in draft/rule_engine.py (replacing the old
+CAPE-based Deep Convection rule in classifier/rule_engine.py (replacing the old
 peak_ascent-percentile rule from classifier.ipynb).
 
 Reuses the EXISTING train/test flight_id split from the current
 combined_codes_train.csv / combined_codes_test.csv — only the secondary-cause
-labelling logic changes, not the split. CALIB (draft/models_v2/calib.joblib)
-must already include cape_jkg (run `uv run python -m draft.build_calib` first
+labelling logic changes, not the split. CALIB (classifier/models/calib.joblib)
+must already include cape_jkg (run `uv run python -m classifier.build_calib` first
 if it doesn't).
 
 Usage:
-  uv run python -m draft.relabel_secondary
+  uv run python -m classifier.relabel_secondary
 """
 
 import numpy as np
@@ -20,7 +20,7 @@ import pandas as pd
 import joblib
 from pathlib import Path
 
-from draft.rule_engine import build_rule_trace
+from classifier.rule_engine import build_rule_trace
 
 
 REASON_MAP = {
@@ -131,9 +131,9 @@ def main():
     train_ids = set(old_train["flight_id"])
     test_ids  = set(old_test["flight_id"])
 
-    calib = joblib.load("draft/models_v2/calib.joblib")
+    calib = joblib.load("classifier/models/calib.joblib")
     if "cape_jkg" not in calib:
-        raise RuntimeError("calib.joblib has no cape_jkg — run `uv run python -m draft.build_calib` first.")
+        raise RuntimeError("calib.joblib has no cape_jkg — run `uv run python -m classifier.build_calib` first.")
 
     label_table = pd.read_excel("Label_End_of_radiosonde.xlsx").iloc[:23]
     valid_combos: dict[str, dict[str, str]] = {}
@@ -159,8 +159,8 @@ def main():
         counts = group["combined_code"].value_counts()
         combined_code_map[secondary] = list(zip(counts.index, counts.values.tolist()))
 
-    joblib.dump(combined_code_map, "draft/models_v2/combined_code_map.joblib")
-    print(f"\nSaved COMBINED_CODE_MAP ({len(combined_code_map)} causes) to draft/models_v2/combined_code_map.joblib")
+    joblib.dump(combined_code_map, "classifier/models/combined_code_map.joblib")
+    print(f"\nSaved COMBINED_CODE_MAP ({len(combined_code_map)} causes) to classifier/models/combined_code_map.joblib")
 
     print(f"Train: {len(new_train)} flights, {new_train['valid'].mean():.1%} valid, "
           f"avg confidence {new_train['confidence'].mean():.2f}")

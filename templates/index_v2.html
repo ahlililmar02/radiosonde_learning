@@ -580,7 +580,7 @@
 
       <div class="field">
         <label>Model Directory Path</label>
-        <input type="text" id="modelDir" value="draft/models_v2" placeholder="e.g. draft/models_v2" />
+        <input type="text" id="modelDir" value="classifier/models" placeholder="e.g. classifier/models" />
       </div>
 
       <div class="btn-row">
@@ -629,7 +629,7 @@
         <div class="step-num">5</div>
         <div class="step-info">
           <h5>Load Saved v2 Model</h5>
-          <p>Load the pre-trained RandomForest, scaler, label encoder and CALIB percentile table from <code>draft/models_v2/</code> — no retraining at inference time.</p>
+          <p>Load the pre-trained RandomForest, scaler, label encoder and CALIB percentile table from <code>classifier/models/</code> — no retraining at inference time.</p>
         </div>
       </div>
       <div class="step">
@@ -740,7 +740,7 @@
 </div><!-- /container -->
 
 <footer>
-  <p>BurstSense v2 — Secondary Burst Cause Classifier · <code>draft/secondary_classifier.py</code> + <code>draft/models_v2/</code></p>
+  <p>BurstSense v2 — Secondary Burst Cause Classifier · <code>classifier/secondary_classifier.py</code> + <code>classifier/models/</code></p>
   <p style="font-family:'JetBrains Mono',monospace;font-size:11px;">no retraining at inference — model loaded from disk</p>
 </footer>
 
@@ -1143,7 +1143,7 @@ function buildEvidence(cause, f, result) {
 function renderRuleTrace(trace) {
   const el = document.getElementById('ruleTable');
   if (!trace.length) {
-    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Rule trace unavailable — draft/models_v2/calib.joblib not found.</p>';
+    el.innerHTML = '<p style="font-size:12px;color:var(--text-muted);">Rule trace unavailable — classifier/models/calib.joblib not found.</p>';
     return;
   }
 

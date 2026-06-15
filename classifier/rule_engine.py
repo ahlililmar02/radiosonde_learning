@@ -3,13 +3,13 @@ rule_engine.py
 ───────────────
 Ports the percentile-rank labelling rules from classifier.ipynb
 (compute_raw_signals / percentile_rank / classify_secondary_multi) so that
-draft/secondary_classifier.py can show, for a single uploaded flight, *how*
+classifier/secondary_classifier.py can show, for a single uploaded flight, *how*
 the rule engine would have labelled it — purely as an analysis/explanation
 overlay alongside the trained RandomForest prediction.
 
 This module does NOT train anything. CALIB (the percentile-rank reference
 arrays) is computed ONCE from the training flights by
-draft/build_calib.py and saved to draft/models_v2/calib.joblib; this module
+classifier/build_calib.py and saved to classifier/models/calib.joblib; this module
 just loads that file and applies the frozen rules to a new flight.
 """
 

@@ -13,8 +13,8 @@ slow ascent, cold-point tropopause, etc.), explains the prediction with SHAP, an
 cross-checks it against an independent percentile-rank rule engine.
 
 This `v2` branch contains only the files needed to run and retrain the **v2 secondary
-classifier** — the v1 primary classifier (`draft/final_classifier.py`,
-`draft/models/`, `templates/index.html`, the OPTICS/UMAP/XGBoost notebooks) has been
+classifier** — the v1 primary classifier (`classifier/final_classifier.py`,
+`classifier/models/`, `templates/index.html`, the OPTICS/UMAP/XGBoost notebooks) has been
 removed.
 
 ## Environment & Commands
@@ -27,7 +27,7 @@ removed.
   and `/v2` both render the v2 UI, debug mode on).
 - Run the inference pipeline directly on a BUFR file:
   ```
-  uv run python -m draft.secondary_classifier --file data/<file>.bfr [--model_dir draft/models_v2] [--save_json out.json]
+  uv run python -m classifier.secondary_classifier --file data/<file>.bfr [--model_dir classifier/models] [--save_json out.json]
   ```
 - No automated test suite exists.
 
@@ -36,22 +36,22 @@ removed.
 ### Inference path (what `app.py` calls)
 - `app.py` — Flask app. `/` and `/v2` render `templates/index_v2.html`;
   `/analyze_v2` accepts an uploaded radiosonde file, saves it to `uploads/`, calls
-  `draft.secondary_classifier.run_pipeline()`, returns JSON, then deletes the upload.
-- `draft/secondary_classifier.py` — self-contained end-to-end pipeline (its own
+  `classifier.secondary_classifier.run_pipeline()`, returns JSON, then deletes the upload.
+- `classifier/secondary_classifier.py` — self-contained end-to-end pipeline (its own
   `extract_radiosonde_data` / `clean_profile` / `engineer_features` /
   `fill_missing_features`, duplicated from the training scripts so inference doesn't
   depend on them at runtime), callable as a script or via
-  `run_pipeline(file_path, model_dir="draft/models_v2")`:
+  `run_pipeline(file_path, model_dir="classifier/models")`:
   1. Parse the BUFR file, clean the profile, derive `ascent_rate_mps`.
   2. `detect_premature_burst` — applies the **30 hPa WMO threshold**
      (`PREMATURE_THRESHOLD_HPA`). If the balloon reached ≤30 hPa, the flight is
      "nominal" and the classifier is skipped.
   3. `engineer_features` — collapses the vertical profile into the 40-feature vector
-     (`draft/models_v2/feature_cols.joblib`) used at training time. **Must stay
-     identical to `engineer_features()` in `draft/train_secondary_model.py`** — any
+     (`classifier/models/feature_cols.joblib`) used at training time. **Must stay
+     identical to `engineer_features()` in `classifier/train_secondary_model.py`** — any
      drift here silently breaks predictions.
   4. `fill_missing_features` — fills NaNs with training-time defaults.
-  5. Loads `draft/models_v2/secondary_classifier_model.joblib` +
+  5. Loads `classifier/models/secondary_classifier_model.joblib` +
      `..._scaler.joblib` + `..._label_encoder.joblib` + `feature_cols.joblib`, scales
      the feature vector, predicts a cause, and computes class probabilities.
   6. `shap.TreeExplainer` computes per-prediction SHAP values — the top 5
@@ -61,38 +61,38 @@ removed.
   7. `generate_explanation` — turns the prediction into a readable report using
      `CAUSE_DESCRIPTIONS` and `EVIDENCE_THRESHOLDS` (a small fixed checklist, display
      only — not the model's actual decision basis).
-  8. `build_rule_trace()` (from `draft/rule_engine.py`) is run as a separate analysis
+  8. `build_rule_trace()` (from `classifier/rule_engine.py`) is run as a separate analysis
      overlay — 10 percentile-rank heuristic rules over raw profile signals — and
      returned as `rule_trace`. It does **not** feed back into the ML prediction; the
      two can legitimately disagree.
   9. The predicted cause is mapped to a `combined_code` via
-     `draft/models_v2/combined_code_map.joblib` (falls back to
+     `classifier/models/combined_code_map.joblib` (falls back to
      `COMBINED_CODE_MAP_FALLBACK` in `secondary_classifier.py` if the artifact is
      missing).
 
-### `draft/rule_engine.py` — shared rule/signal logic
+### `classifier/rule_engine.py` — shared rule/signal logic
 - `compute_raw_signals()` — per-flight raw signals (max shear, wind shear near burst,
   CAPE/CIN/LCL via MetPy parcel theory, cold-point tropopause distance, moisture
   signals, etc.).
 - `percentile_rank()` / `threshold_value()` — map a raw value to/from its percentile
-  in the training distribution (`draft/models_v2/calib.joblib`).
+  in the training distribution (`classifier/models/calib.joblib`).
 - `build_rule_trace()` — evaluates all 10 secondary-cause rules, used both by the
   inference-time analysis overlay and by `relabel_secondary.py` for training labels.
 
 ### Training / retraining pipeline
 Run in this order whenever `data/rason_complete.csv` is refreshed:
-1. `uv run python -m draft.build_calib` — rebuilds `draft/models_v2/calib.joblib`
+1. `uv run python -m classifier.build_calib` — rebuilds `classifier/models/calib.joblib`
    (percentile-rank reference distributions for `rule_engine.py`, computed from
    `data/rason_complete.csv`).
-2. `uv run python -m draft.relabel_secondary` — re-runs `build_rule_trace()` over
+2. `uv run python -m classifier.relabel_secondary` — re-runs `build_rule_trace()` over
    every flight to regenerate `combined_codes_train.csv` / `combined_codes_test.csv`
    (reusing the existing train/test flight-id split) and
-   `draft/models_v2/combined_code_map.joblib` (secondary cause → combined-code
+   `classifier/models/combined_code_map.joblib` (secondary cause → combined-code
    frequency table, used by `secondary_classifier.py` at inference time).
-3. `uv run python -m draft.train_secondary_model` — trains the RandomForest
+3. `uv run python -m classifier.train_secondary_model` — trains the RandomForest
    (`class_weight='balanced'`, GridSearchCV) on `data/rason_complete.csv` +
    `combined_codes_train.csv`/`combined_codes_test.csv`, writing
-   `draft/models_v2/secondary_classifier_model.joblib`, `..._scaler.joblib`,
+   `classifier/models/secondary_classifier_model.joblib`, `..._scaler.joblib`,
    `..._label_encoder.joblib`, and `feature_cols.joblib`.
 
 ### Data
@@ -108,6 +108,6 @@ Run in this order whenever `data/rason_complete.csv` is refreshed:
 The 30 hPa nominal/premature threshold (`PREMATURE_THRESHOLD_HPA`), the
 `engineer_features()` feature set/order, and the `max_shear`/`spd_max`/`dir_delta`
 definitions in `rule_engine.compute_raw_signals()` must stay in sync across
-`draft/secondary_classifier.py`, `draft/train_secondary_model.py`, and
-`draft/rule_engine.py`. Changing one without the others will desync
-`draft/models_v2/*.joblib` from the inference and rule-trace code.
+`classifier/secondary_classifier.py`, `classifier/train_secondary_model.py`, and
+`classifier/rule_engine.py`. Changing one without the others will desync
+`classifier/models/*.joblib` from the inference and rule-trace code.

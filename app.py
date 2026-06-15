@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import os
 from werkzeug.utils import secure_filename
-from draft.secondary_classifier import run_pipeline as run_pipeline_v2
+from classifier.secondary_classifier import run_pipeline as run_pipeline_v2
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MODEL_DIR_V2'] = 'draft/models_v2'
+app.config['MODEL_DIR_V2'] = 'classifier/models'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')

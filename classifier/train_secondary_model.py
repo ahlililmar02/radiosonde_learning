@@ -5,14 +5,14 @@ Trains the secondary burst-cause classifier on the recalibrated
 percentile-rank labels produced by classifier.ipynb
 (combined_codes_train.csv / combined_codes_test.csv).
 
-Does NOT touch draft/final_classifier.py or draft/models/ — this script
-builds a separate, self-contained model bundle in draft/models_v2/ for
+Does NOT touch classifier/final_classifier.py or classifier/models/ — this script
+builds a separate, self-contained model bundle in classifier/models/ for
 the new secondary-cause taxonomy (RH Freeze-out, Strong Shear, Cold Point
 Tropopause, Pressure Reversal, Slow Ascent, Cloud/Rain Layer, Deep
 Convection, ...).
 
 Usage:
-  uv run python draft/train_secondary_model.py
+  uv run python classifier/train_secondary_model.py
 """
 
 import numpy as np
@@ -25,11 +25,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
 
-from draft.rule_engine import compute_cape_cin
+from classifier.rule_engine import compute_cape_cin
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 1. FEATURE ENGINEERING (kept identical to draft/final_classifier.py
+# 1. FEATURE ENGINEERING (kept identical to classifier/final_classifier.py
 #    engineer_features / fill_missing_features so the same code can run
 #    on a flight profile parsed from a BUFR file at inference time)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -133,7 +133,7 @@ def engineer_features(flight_df: pd.DataFrame) -> dict | None:
 
     time_to_burst_mins = len(f) * (1 / 60) if 'time_s' not in f.columns else (f['time_s'].max() - f['time_s'].min()) / 60
 
-    # ── Rule-engine raw signals (draft/rule_engine.py::compute_raw_signals),
+    # ── Rule-engine raw signals (classifier/rule_engine.py::compute_raw_signals),
     #    exposed as model features so the classifier sees the same signals
     #    the secondary-cause labels were derived from. gps_frozen is
     #    excluded — BUFR inference has no per-level lat/lon. ─────────────────
@@ -305,7 +305,7 @@ def build_feature_table(rason_df: pd.DataFrame, labels_df: pd.DataFrame):
     didn't) and measurably hurts test accuracy (0.66 -> 0.55).
 
     The trained model is still applied to ALL flights at inference time
-    (draft/secondary_classifier.py) — is_premature is shown as a display
+    (classifier/secondary_classifier.py) — is_premature is shown as a display
     field there, not used to skip classification.
     """
     label_lookup = (
@@ -412,7 +412,7 @@ def main():
     ))
 
     # ── Save model bundle ────────────────────────────────────────────────────
-    out_dir = Path('draft/models_v2')
+    out_dir = Path('classifier/models')
     out_dir.mkdir(parents=True, exist_ok=True)
 
     joblib.dump(model, out_dir / 'secondary_classifier_model.joblib')

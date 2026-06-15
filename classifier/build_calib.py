@@ -3,15 +3,15 @@ build_calib.py
 ────────────────
 One-time (re-run only if combined_codes_train.csv changes) script that
 computes CALIB — the percentile-rank reference arrays for the rule-engine
-trace in draft/rule_engine.py — from the TRAIN flights only, exactly as
-classifier.ipynb does, and saves it to draft/models_v2/calib.joblib.
+trace in classifier/rule_engine.py — from the TRAIN flights only, exactly as
+classifier.ipynb does, and saves it to classifier/models/calib.joblib.
 
 This does NOT train or touch the RandomForest model in
-draft/models_v2/secondary_classifier_model.joblib — it only persists the
+classifier/models/secondary_classifier_model.joblib — it only persists the
 calibration data needed to display percentile ranks for new flights.
 
 Usage:
-  uv run python draft/build_calib.py
+  uv run python classifier/build_calib.py
 """
 
 import numpy as np
@@ -19,7 +19,7 @@ import pandas as pd
 import joblib
 from pathlib import Path
 
-from draft.rule_engine import compute_raw_signals
+from classifier.rule_engine import compute_raw_signals
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
         if col != 'gps_frozen'
     }
 
-    out_dir = Path('draft/models_v2')
+    out_dir = Path('classifier/models')
     out_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(calib, out_dir / 'calib.joblib')
 
