@@ -17,6 +17,11 @@ tropopause).
   checklist
 - An independent rule-based trace overlay for cross-checking the ML prediction
 
+## Requirements
+
+- Python 3.13
+- `uv` (recommended) or `pip`
+
 ## Setup
 
 ```
@@ -28,7 +33,7 @@ Then open http://127.0.0.1:5000/.
 
 ### Without uv
 
-If `uv` isn't available, use `requirements.txt` with a plain venv:
+If `uv` isn't available, use a plain venv:
 
 ```
 python -m venv .venv
@@ -37,7 +42,22 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## CLI usage
+
+Run the inference pipeline directly on a BUFR file without starting the web app:
+
+```
+uv run python -m classifier.secondary_classifier --file data/<file>.bfr
+uv run python -m classifier.secondary_classifier --file data/<file>.bfr --save_json result.json
+```
+
 ## Retraining
 
-Retraining pipeline (run in order whenever the training data changes):
-`classifier.build_calib` -> `classifier.relabel_secondary` -> `classifier.train_secondary_model`.
+Requires `data/rason_complete.csv` (not tracked in git — 875 MB, obtain separately).
+Run in order whenever the training data changes:
+
+```
+uv run python -m classifier.build_calib
+uv run python -m classifier.relabel_secondary
+uv run python -m classifier.train_secondary_model
+```
